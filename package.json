@@ -1,0 +1,38 @@
+{
+  "name": "silentforge",
+  "version": "0.1.0",
+  "description": "RepoSite CLI: forge an editable Astro product site and lightweight code wiki from a GitHub repository.",
+  "type": "module",
+  "bin": {
+    "reposite": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "dev": "tsx src/cli.ts"
+  },
+  "keywords": [
+    "github",
+    "astro",
+    "cli",
+    "documentation",
+    "static-site"
+  ],
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "commander": "^14.0.0",
+    "execa": "^9.6.0",
+    "zod": "^3.25.64"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "@vitest/coverage-v8": "^4.1.9",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.9"
+  }
+}
