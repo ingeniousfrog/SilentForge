@@ -11,6 +11,35 @@ npm install
 npm run build
 ```
 
+## Start the Frontend Workbench
+
+For local development, start the RepoSite web UI directly from source:
+
+```sh
+npm run web
+```
+
+Then open:
+
+```text
+http://127.0.0.1:4177/
+```
+
+To use a different port:
+
+```sh
+npm run web -- --port 4188
+```
+
+To verify the packaged CLI path first:
+
+```sh
+npm run build
+npm run web:dist
+```
+
+The workbench lets you paste a GitHub URL, watch each generation step, browse fetched repository resources, inspect the generated code wiki, preview the result, and download the generated Astro project as a ZIP file.
+
 Generate a site from a public GitHub repository:
 
 ```sh
@@ -35,8 +64,6 @@ Run the local web workbench:
 ```sh
 reposite web
 ```
-
-The workbench lets you paste a GitHub URL, watch each generation step, browse fetched repository resources, inspect the generated code wiki, preview the result, and download the generated Astro project as a ZIP file.
 
 ## What `reposite init` Generates
 

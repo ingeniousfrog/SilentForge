@@ -10,7 +10,9 @@
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "dev": "tsx src/cli.ts"
+    "dev": "tsx src/cli.ts",
+    "web": "tsx src/cli.ts web",
+    "web:dist": "node dist/cli.js web"
   },
   "keywords": [
     "github",
