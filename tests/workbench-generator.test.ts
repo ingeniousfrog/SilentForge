@@ -2,13 +2,15 @@ import { describe, expect, it, vi } from "vitest";
 import { JobStore } from "../src/workbench/jobStore.js";
 
 const fetchRepositorySnapshot = vi.fn();
-const generateAstroSite = vi.fn();
+const generateStaticSite = vi.fn();
+const createPresentationPlan = vi.fn();
 
 vi.mock("../src/github/client.js", () => ({ fetchRepositorySnapshot }));
-vi.mock("../src/site/generator.js", () => ({ generateAstroSite }));
+vi.mock("../src/site/generator.js", () => ({ generateStaticSite }));
+vi.mock("../src/presentation/ai.js", () => ({ createPresentationPlan }));
 
 describe("runGenerationJob", () => {
-  it("records progress and generates the Astro project", async () => {
+  it("records progress and generates the static presentation", async () => {
     const { runGenerationJob } = await import("../src/workbench/generator.js");
     const store = new JobStore();
     const job = await store.create("acme/widgetkit");
@@ -27,13 +29,24 @@ describe("runGenerationJob", () => {
       files: [{ path: "package.json", type: "blob" }],
       configFiles: [{ path: "package.json", type: "blob" }]
     });
+    createPresentationPlan.mockResolvedValue({
+      mode: "compact-story",
+      theme: "signal-dark",
+      chapters: [],
+      detailPages: [],
+      plannedBy: "rules"
+    });
 
     await runGenerationJob(store, job);
 
     const finished = store.require(job.id);
     expect(finished.status).toBe("complete");
     expect(finished.events.map((event) => event.type)).toContain("complete");
-    expect(generateAstroSite).toHaveBeenCalledWith(expect.objectContaining({ repository: expect.any(Object) }), job.outputDir);
+    expect(generateStaticSite).toHaveBeenCalledWith(
+      expect.objectContaining({ repository: expect.any(Object) }),
+      job.outputDir,
+      expect.objectContaining({ presentationPlan: expect.any(Object) })
+    );
   });
 
   it("records failures as error events", async () => {

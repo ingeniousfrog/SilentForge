@@ -1,19 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const fetchRepositorySnapshot = vi.fn();
-const generateAstroSite = vi.fn();
-const execa = vi.fn();
+const generateStaticSite = vi.fn();
+const createPresentationPlan = vi.fn();
 
 vi.mock("../src/github/client.js", () => ({ fetchRepositorySnapshot }));
-vi.mock("../src/site/generator.js", () => ({ generateAstroSite }));
-vi.mock("execa", () => ({ execa }));
+vi.mock("../src/site/generator.js", () => ({ generateStaticSite }));
+vi.mock("../src/presentation/ai.js", () => ({ createPresentationPlan }));
 
 afterEach(() => {
   vi.clearAllMocks();
 });
 
 describe("initRepoSite", () => {
-  it("fetches a repository snapshot, builds a site model, and writes the Astro project", async () => {
+  it("fetches a repository snapshot, builds a site model, and writes the static presentation", async () => {
     const { initRepoSite } = await import("../src/commands/init.js");
     fetchRepositorySnapshot.mockResolvedValue({
       metadata: {
@@ -30,25 +30,22 @@ describe("initRepoSite", () => {
       files: [{ path: "package.json", type: "blob" }],
       configFiles: [{ path: "package.json", type: "blob" }]
     });
+    createPresentationPlan.mockResolvedValue({
+      mode: "compact-story",
+      theme: "signal-dark",
+      chapters: [],
+      detailPages: [],
+      plannedBy: "rules"
+    });
 
     const result = await initRepoSite("acme/widgetkit", { cwd: "/tmp/work", outputDir: "site", token: "token" });
 
     expect(fetchRepositorySnapshot).toHaveBeenCalledWith("acme/widgetkit", { token: "token" });
-    expect(generateAstroSite).toHaveBeenCalledWith(expect.objectContaining({ repository: expect.any(Object) }), "/tmp/work/site");
+    expect(generateStaticSite).toHaveBeenCalledWith(
+      expect.objectContaining({ repository: expect.any(Object) }),
+      "/tmp/work/site",
+      expect.objectContaining({ presentationPlan: expect.any(Object) })
+    );
     expect(result).toEqual({ outputDir: "/tmp/work/site", fullName: "acme/widgetkit" });
-  });
-});
-
-describe("runAstroScript", () => {
-  it("runs npm scripts in the requested directory", async () => {
-    const { runAstroScript } = await import("../src/commands/astro.js");
-
-    await runAstroScript("build", { cwd: "/tmp/site" });
-
-    expect(execa).toHaveBeenCalledWith("npm", ["run", "build"], {
-      cwd: "/tmp/site",
-      stdio: "inherit",
-      preferLocal: true
-    });
   });
 });

@@ -1,7 +1,7 @@
 {
   "name": "silentforge",
   "version": "0.1.0",
-  "description": "RepoSite CLI: forge an editable Astro product site and lightweight code wiki from a GitHub repository.",
+  "description": "Forge a GitHub repository into a portable adaptive HTML presentation and code knowledge base.",
   "type": "module",
   "bin": {
     "reposite": "./dist/cli.js"
@@ -16,7 +16,8 @@
   },
   "keywords": [
     "github",
-    "astro",
+    "presentation",
+    "reveal.js",
     "cli",
     "documentation",
     "static-site"
@@ -27,7 +28,9 @@
   },
   "dependencies": {
     "commander": "^14.0.0",
-    "execa": "^9.6.0",
+    "mermaid": "^11.15.0",
+    "openai": "^6.44.0",
+    "reveal.js": "^6.0.1",
     "zod": "^3.25.64"
   },
   "devDependencies": {

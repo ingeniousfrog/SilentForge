@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
-import { generateAstroSite } from "../src/site/generator.js";
+import { generateStaticSite } from "../src/site/generator.js";
 import type { SiteModel } from "../src/types.js";
 
 const tempDirs: string[] = [];
@@ -40,8 +40,46 @@ const createModel = (): SiteModel => ({
     techStack: ["TypeScript", "Astro"],
     entryFiles: ["src/index.ts"],
     configFiles: [{ path: "package.json", purpose: "Node.js package manifest and scripts" }],
+    fileTypeDistribution: [
+      { label: ".ts", count: 1 },
+      { label: ".json", count: 1 }
+    ],
+    directorySummaries: [
+      {
+        path: "src",
+        fileCount: 1,
+        configCount: 0,
+        entryCount: 1,
+        summary: "src contains 1 tracked file, 1 detected entry."
+      }
+    ],
+    readmeCoverage: {
+      hasTitle: true,
+      hasSummary: true,
+      featureCount: 1,
+      hasInstallation: true,
+      hasUsage: true,
+      faqCount: 1,
+      screenshotCount: 1,
+      sectionCount: 0
+    },
+    detectionSignals: [
+      {
+        label: "README coverage",
+        value: "title, summary, features, installation, usage, FAQ, screenshots",
+        confidence: "high",
+        source: "Parsed README sections"
+      }
+    ],
     moduleMap: [{ heading: "src", content: "Contains source files." }],
     mermaid: "graph TD\n  root[\"acme/widgetkit\"] --> src[\"src\"]"
+  },
+  profile: {
+    richnessScore: 8,
+    hasVisualStory: true,
+    hasDeveloperJourney: true,
+    hasArchitectureDepth: true,
+    readmeInsightCount: 1
   }
 });
 
@@ -49,17 +87,46 @@ afterEach(async () => {
   await Promise.all(tempDirs.map((dir) => rm(dir, { force: true, recursive: true })));
 });
 
-describe("generateAstroSite", () => {
-  it("writes an editable Astro project with product pages and code wiki", async () => {
+describe("generateStaticSite", () => {
+  it("writes a portable presentation site with local runtime assets and detail pages", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "reposite-"));
     tempDirs.push(outputDir);
 
-    await generateAstroSite(createModel(), outputDir);
+    await generateStaticSite(createModel(), outputDir);
 
-    await expect(readFile(join(outputDir, "package.json"), "utf8")).resolves.toContain("astro");
-    await expect(readFile(join(outputDir, "src/pages/index.astro"), "utf8")).resolves.toContain("WidgetKit");
-    await expect(readFile(join(outputDir, "src/pages/code-wiki.astro"), "utf8")).resolves.toContain("Project Structure");
-    await expect(readFile(join(outputDir, "src/data/site.json"), "utf8")).resolves.toContain("acme/widgetkit");
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain("WidgetKit");
+    await expect(readFile(join(outputDir, "assets/reveal.js"), "utf8")).resolves.toContain("Reveal");
+    await expect(readFile(join(outputDir, "assets/mermaid.js"), "utf8")).resolves.toContain("mermaid");
+    await expect(readFile(join(outputDir, "details/architecture.html"), "utf8")).resolves.toContain("Architecture");
+    await expect(readFile(join(outputDir, "data/site.json"), "utf8")).resolves.toContain("presentationPlan");
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('class="mermaid"');
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain(
+      '<details class="metric license-card"'
+    );
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('id="chapter-nav"');
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('id="next-chapter"');
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('class="story"');
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain(
+      "Scroll down to explore"
+    );
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain(
+      'class="chapter-context"'
+    );
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain(
+      "<section><section"
+    );
+    await expect(readFile(join(outputDir, "assets/site.js"), "utf8")).resolves.toContain(
+      "IntersectionObserver"
+    );
+    await expect(readFile(join(outputDir, "assets/site.js"), "utf8")).resolves.toContain(
+      "diagram-error"
+    );
+    await expect(readFile(join(outputDir, "assets/site.js"), "utf8")).resolves.toContain(
+      "requestAnimationFrame"
+    );
+    await expect(readFile(join(outputDir, "assets/site.css"), "utf8")).resolves.toContain(
+      "scroll-behavior: smooth"
+    );
   });
 
   it("does not delete user-authored files in the output directory", async () => {
@@ -67,7 +134,7 @@ describe("generateAstroSite", () => {
     tempDirs.push(outputDir);
     await writeFile(join(outputDir, "notes.md"), "keep me", "utf8");
 
-    await generateAstroSite(createModel(), outputDir);
+    await generateStaticSite(createModel(), outputDir);
 
     await expect(readFile(join(outputDir, "notes.md"), "utf8")).resolves.toBe("keep me");
   });

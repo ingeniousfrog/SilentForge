@@ -15,6 +15,7 @@ export type JobEvent = {
 export type WorkbenchJob = {
   readonly id: string;
   readonly repoUrl: string;
+  readonly useAi: boolean;
   readonly status: JobStatus;
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -41,13 +42,14 @@ export type PublicJob = {
 export class JobStore {
   readonly #jobs = new Map<string, WorkbenchJob>();
 
-  async create(repoUrl: string): Promise<WorkbenchJob> {
+  async create(repoUrl: string, useAi = false): Promise<WorkbenchJob> {
     const id = createJobId();
     const workspaceDir = await mkdtemp(join(tmpdir(), "reposite-workbench-"));
     const now = new Date().toISOString();
     const job: WorkbenchJob = {
       id,
       repoUrl,
+      useAi,
       status: "queued",
       createdAt: now,
       updatedAt: now,

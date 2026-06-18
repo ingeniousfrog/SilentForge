@@ -13,6 +13,9 @@ describe("workbenchHtml", () => {
     expect(html).toContain('data-tab="wiki"');
     expect(html).toContain('data-tab="preview"');
     expect(html).toContain('id="download"');
+    expect(html).toContain('id="use-ai"');
+    expect(html).toContain("extracted repository information is sent to OpenAI");
+    expect(html).toContain('src="/preview/\' + state.job.id + \'/');
     expect(html).toContain("Enter a GitHub repository URL first.");
   });
 });

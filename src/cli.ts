@@ -2,7 +2,6 @@
 import { pathToFileURL } from "node:url";
 import { Command } from "commander";
 import { initRepoSite } from "./commands/init.js";
-import { runAstroScript } from "./commands/astro.js";
 import { logger } from "./logger.js";
 import { startWorkbenchServer } from "./workbench/server.js";
 
@@ -11,18 +10,19 @@ export function createCli(): Command {
 
   program
     .name("reposite")
-    .description("Generate an editable Astro product site and lightweight code wiki from a GitHub repository.")
+    .description("Generate a portable static presentation and lightweight code wiki from a GitHub repository.")
     .version("0.1.0");
 
   program
     .command("init")
     .argument("<github-repo-url>", "GitHub repository URL or owner/repo shorthand")
-    .option("-o, --output <dir>", "Output directory for the generated Astro project")
-    .action(async (githubRepoUrl: string, options: { readonly output?: string }) => {
-      const result = await initRepoSite(githubRepoUrl, { outputDir: options.output });
+    .option("-o, --output <dir>", "Output directory for the generated static presentation")
+    .option("--ai", "Use OpenAI to arrange evidence-backed presentation structure", false)
+    .action(async (githubRepoUrl: string, options: { readonly output?: string; readonly ai?: boolean }) => {
+      const result = await initRepoSite(githubRepoUrl, { outputDir: options.output, ai: options.ai });
       logger.info(`Generated RepoSite for ${result.fullName}`);
       logger.info(`Output: ${result.outputDir}`);
-      logger.info("Next: cd into the output directory, run npm install, then npm run dev.");
+      logger.info("Next: open index.html or deploy the directory to any static host.");
     });
 
   program
@@ -38,20 +38,6 @@ export function createCli(): Command {
       const server = await startWorkbenchServer({ host: options.host, port });
       logger.info(`RepoSite workbench: ${server.url}`);
       logger.info("Press Ctrl-C to stop.");
-    });
-
-  program
-    .command("dev")
-    .description("Run Astro dev in the current generated site directory.")
-    .action(async () => {
-      await runAstroScript("dev");
-    });
-
-  program
-    .command("build")
-    .description("Build the current generated site directory.")
-    .action(async () => {
-      await runAstroScript("build");
     });
 
   return program;

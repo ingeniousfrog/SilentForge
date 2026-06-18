@@ -1,6 +1,7 @@
 import { fetchRepositorySnapshot } from "../github/client.js";
 import { createSiteModel } from "../site/model.js";
-import { generateAstroSite } from "../site/generator.js";
+import { createPresentationPlan } from "../presentation/ai.js";
+import { generateStaticSite } from "../site/generator.js";
 import type { JobStore, WorkbenchJob } from "./jobStore.js";
 
 export async function runGenerationJob(store: JobStore, job: WorkbenchJob): Promise<void> {
@@ -18,11 +19,22 @@ export async function runGenerationJob(store: JobStore, job: WorkbenchJob): Prom
     store.patch(job.id, { model });
 
     store.pushEvent(job.id, "step", "Building lightweight code knowledge base and Mermaid structure map.");
-    store.pushEvent(job.id, "step", "Writing editable Astro project files.");
-    await generateAstroSite(model, job.outputDir);
+    const presentationPlan = await createPresentationPlan(model, {
+      useAi: job.useAi,
+      onFallback: (message) => store.pushEvent(job.id, "step", `AI structure unavailable: ${message}`)
+    });
+    store.pushEvent(
+      job.id,
+      "step",
+      presentationPlan.plannedBy === "openai"
+        ? "OpenAI arranged the evidence-backed presentation structure."
+        : "Selected a deterministic presentation structure from repository signals."
+    );
+    store.pushEvent(job.id, "step", "Writing portable static presentation files.");
+    await generateStaticSite(model, job.outputDir, { presentationPlan });
 
     store.patch(job.id, { status: "complete" });
-    store.pushEvent(job.id, "complete", "RepoSite project is ready to preview and download.");
+    store.pushEvent(job.id, "complete", "Static presentation is ready to preview and download.");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown generation error";
     store.patch(job.id, { status: "failed", error: message });

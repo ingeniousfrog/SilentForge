@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { parseReadme } from "../src/readme/parser.js";
 
 describe("parseReadme", () => {
+  it("skips standalone navigation links when selecting the summary", () => {
+    const result = parseReadme("# Widget\n\n[中文 README](README-CN.md)\n\nActual project summary.");
+    expect(result.summary).toBe("Actual project summary.");
+  });
   it("extracts core product documentation without inventing missing content", () => {
     const parsed = parseReadme(`# WidgetKit
 

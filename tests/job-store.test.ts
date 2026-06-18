@@ -18,6 +18,7 @@ describe("JobStore", () => {
     });
     expect(store.publicJob(job.id)).not.toHaveProperty("workspaceDir");
     expect(store.publicJob(job.id)).not.toHaveProperty("outputDir");
+    expect(job.useAi).toBe(false);
   });
 
   it("throws for unknown jobs", () => {

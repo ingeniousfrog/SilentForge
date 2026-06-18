@@ -16,7 +16,8 @@ describe("createSiteModel", () => {
         topics: [],
         language: "TypeScript"
       },
-      readme: "# WidgetKit\n\nTiny widgets.\n\n## Usage\nnpm run demo",
+      readme:
+        "# WidgetKit\n\nTiny widgets.\n\n## Usage\nnpm run demo\n\n## Architecture\nThe source package contains the public API, command line entrypoint, processing backends, and validation helpers.",
       releases: [],
       files: [
         { path: "package.json", type: "blob" },
@@ -33,9 +34,30 @@ describe("createSiteModel", () => {
     expect(model.screenshots).toEqual([
       {
         alt: "home.png",
-        src: "https://github.com/acme/widgetkit/raw/main/docs/screenshots/home.png"
+        src: "https://raw.githubusercontent.com/acme/widgetkit/main/docs/screenshots/home.png"
       }
     ]);
     expect(model.knowledgeBase.entryFiles).toContain("src/index.ts");
+    expect(model.profile.hasVisualStory).toBe(true);
+    expect(model.profile.readmeInsightCount).toBeGreaterThan(0);
+  });
+
+  it("does not treat status badges as presentation screenshots", () => {
+    const snapshot: RepositorySnapshot = {
+      metadata: {
+        owner: "acme",
+        name: "widgetkit",
+        fullName: "acme/widgetkit",
+        htmlUrl: "https://github.com/acme/widgetkit",
+        defaultBranch: "main",
+        stars: 0,
+        topics: []
+      },
+      readme: "# WidgetKit\n\n![CI](https://github.com/acme/widgetkit/actions/workflows/ci.yml/badge.svg)",
+      releases: [],
+      files: [],
+      configFiles: []
+    };
+    expect(createSiteModel(snapshot).screenshots).toEqual([]);
   });
 });

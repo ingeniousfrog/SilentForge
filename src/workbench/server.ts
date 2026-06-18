@@ -1,12 +1,13 @@
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { extname, join, normalize } from "node:path";
+import { extname, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import { z } from "zod";
+import { parseGitHubRepoUrl } from "../github/url.js";
 import { createZipFromDirectory } from "./archive.js";
 import { runGenerationJob } from "./generator.js";
 import { JobStore, toPublicJob } from "./jobStore.js";
-import { renderPreviewHtml } from "./preview.js";
 import { createResourceView } from "./resources.js";
 import { workbenchHtml } from "./ui.js";
 
@@ -19,6 +20,11 @@ export type WorkbenchServer = {
   readonly url: string;
   readonly close: () => Promise<void>;
 };
+
+const createJobSchema = z.object({
+  repoUrl: z.string().trim().min(1).max(500),
+  useAi: z.boolean().optional().default(false)
+});
 
 export async function startWorkbenchServer(options: WorkbenchServerOptions = {}): Promise<WorkbenchServer> {
   const host = options.host ?? "127.0.0.1";
@@ -58,14 +64,19 @@ async function handleRequest(store: JobStore, request: IncomingMessage, response
   }
 
   if (request.method === "POST" && url.pathname === "/api/jobs") {
-    const payload = await readJsonBody(request);
-    const repoUrl = typeof payload.repoUrl === "string" ? payload.repoUrl.trim() : "";
-    if (!repoUrl) {
-      writeJson(response, 400, { error: "GitHub URL is required." });
+    const parsedPayload = createJobSchema.safeParse(await readJsonBody(request));
+    if (!parsedPayload.success) {
+      writeJson(response, 400, { error: "A valid GitHub repository URL and optional AI flag are required." });
+      return;
+    }
+    try {
+      parseGitHubRepoUrl(parsedPayload.data.repoUrl);
+    } catch {
+      writeJson(response, 400, { error: "Enter a public github.com owner/repository URL or owner/repository shorthand." });
       return;
     }
 
-    const job = await store.create(repoUrl);
+    const job = await store.create(parsedPayload.data.repoUrl, parsedPayload.data.useAi);
     queueMicrotask(() => {
       void runGenerationJob(store, job);
     });
@@ -186,47 +197,66 @@ async function servePreview(
     return;
   }
 
-  if (previewPath === "/" || previewPath === "") {
-    if (!job.model) {
-      writeJson(response, 404, { error: "Preview is not ready." });
-      return;
-    }
-    writeHtml(response, renderPreviewHtml(job.model));
+  const filePath = resolvePreviewPath(job.outputDir, previewPath);
+  if (!filePath) {
+    writeJson(response, 400, { error: "Invalid preview path." });
     return;
   }
-
-  const filePath = resolvePreviewPath(job.outputDir, previewPath);
   const fileStat = await stat(filePath).catch(() => undefined);
   if (!fileStat?.isFile()) {
     writeJson(response, 404, { error: "Preview file not found." });
     return;
   }
 
-  response.writeHead(200, { "content-type": contentType(filePath) });
+  response.writeHead(200, {
+    "content-type": contentType(filePath),
+    "x-content-type-options": "nosniff",
+    "content-security-policy":
+      "default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'self'; base-uri 'none'; object-src 'none'"
+  });
   createReadStream(filePath).pipe(response);
 }
 
-function resolvePreviewPath(outputDir: string, previewPath: string): string {
-  const cleanPath = normalize(decodeURIComponent(previewPath)).replace(/^(\.\.[/\\])+/, "");
-  const path = cleanPath === "/" || cleanPath === "." ? "src/pages/index.astro" : cleanPath.replace(/^\//, "");
-  if (path.endsWith(".astro") || path.endsWith(".json") || path.endsWith(".md") || path === "package.json") {
-    return join(outputDir, path);
+export function resolvePreviewPath(outputDir: string, previewPath: string): string | undefined {
+  let decodedPath: string;
+  try {
+    decodedPath = decodeURIComponent(previewPath);
+  } catch {
+    return undefined;
   }
-
-  return join(outputDir, "src", "pages", path.endsWith(".astro") ? path : `${path.replace(/\/$/, "")}.astro`);
+  const requestedPath = decodedPath === "/" || decodedPath === "" ? "index.html" : decodedPath.replace(/^\/+/, "");
+  const candidate = resolve(outputDir, requestedPath);
+  const pathFromRoot = relative(resolve(outputDir), candidate);
+  if (pathFromRoot === ".." || pathFromRoot.startsWith(`..${sep}`) || pathFromRoot.startsWith(sep)) {
+    return undefined;
+  }
+  return candidate;
 }
 
 async function readJsonBody(request: IncomingMessage): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = [];
+  let totalBytes = 0;
+  let exceededLimit = false;
   for await (const chunk of request) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    totalBytes += buffer.length;
+    if (totalBytes > 16_384) {
+      exceededLimit = true;
+      continue;
+    }
+    chunks.push(buffer);
   }
 
-  if (chunks.length === 0) {
+  if (chunks.length === 0 || exceededLimit) {
     return {};
   }
 
-  return JSON.parse(Buffer.concat(chunks).toString("utf8")) as Record<string, unknown>;
+  const body = Buffer.concat(chunks);
+  try {
+    return JSON.parse(body.toString("utf8")) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
 }
 
 function writeHtml(response: ServerResponse, html: string): void {
@@ -242,7 +272,6 @@ function writeJson(response: ServerResponse, status: number, payload: unknown): 
 function contentType(path: string): string {
   return (
     {
-      ".astro": "text/plain; charset=utf-8",
       ".json": "application/json; charset=utf-8",
       ".md": "text/markdown; charset=utf-8",
       ".html": "text/html; charset=utf-8",

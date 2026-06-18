@@ -65,7 +65,7 @@ function splitSections(lines: readonly string[]): readonly ReadmeSection[] {
 
 function extractSummary(lines: readonly string[], title?: string): string | undefined {
   const titleLine = title ? `# ${title}` : undefined;
-  const paragraph = lines.find((line) => {
+  const startIndex = lines.findIndex((line) => {
     const trimmed = line.trim();
     return (
       trimmed.length > 0 &&
@@ -73,11 +73,20 @@ function extractSummary(lines: readonly string[], title?: string): string | unde
       !trimmed.startsWith("#") &&
       !trimmed.startsWith("!") &&
       !trimmed.startsWith("[!") &&
-      !trimmed.startsWith("<")
+      !trimmed.startsWith("<") &&
+      !/^\[[^\]]+\]\([^)]+\)$/.test(trimmed)
     );
   });
 
-  return paragraph?.trim();
+  if (startIndex < 0) return undefined;
+  const paragraph: string[] = [];
+  for (const line of lines.slice(startIndex)) {
+    const trimmed = line.trim();
+    if (!trimmed) break;
+    if (trimmed.startsWith("#") || trimmed.startsWith("```")) break;
+    paragraph.push(trimmed);
+  }
+  return paragraph.join(" ").trim() || undefined;
 }
 
 function normalizeHeading(heading: string): string {

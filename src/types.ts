@@ -79,11 +79,46 @@ export type ConfigFileSummary = {
   readonly purpose: string;
 };
 
+export type FileTypeSummary = {
+  readonly label: string;
+  readonly count: number;
+};
+
+export type DirectorySummary = {
+  readonly path: string;
+  readonly fileCount: number;
+  readonly configCount: number;
+  readonly entryCount: number;
+  readonly summary: string;
+};
+
+export type ReadmeCoverage = {
+  readonly hasTitle: boolean;
+  readonly hasSummary: boolean;
+  readonly featureCount: number;
+  readonly hasInstallation: boolean;
+  readonly hasUsage: boolean;
+  readonly faqCount: number;
+  readonly screenshotCount: number;
+  readonly sectionCount: number;
+};
+
+export type DetectionSignal = {
+  readonly label: string;
+  readonly value: string;
+  readonly confidence: "high" | "medium" | "low";
+  readonly source: string;
+};
+
 export type CodeKnowledgeBase = {
   readonly projectStructure: readonly string[];
   readonly techStack: readonly string[];
   readonly entryFiles: readonly string[];
   readonly configFiles: readonly ConfigFileSummary[];
+  readonly fileTypeDistribution: readonly FileTypeSummary[];
+  readonly directorySummaries: readonly DirectorySummary[];
+  readonly readmeCoverage: ReadmeCoverage;
+  readonly detectionSignals: readonly DetectionSignal[];
   readonly moduleMap: readonly ReadmeSection[];
   readonly mermaid: string;
 };
@@ -94,5 +129,52 @@ export type SiteModel = {
   readonly releases: readonly RepositoryRelease[];
   readonly screenshots: readonly ReadmeImage[];
   readonly knowledgeBase: CodeKnowledgeBase;
+  readonly profile: ProjectProfile;
   readonly generatedAt: string;
+};
+
+export type PresentationMode = "visual-showcase" | "developer-deck" | "architecture-map" | "compact-story";
+
+export type PresentationTheme = "signal-dark" | "editorial-light" | "blueprint";
+
+export type PresentationChapterKind =
+  | "hero"
+  | "features"
+  | "visuals"
+  | "usage"
+  | "readme-insights"
+  | "technology"
+  | "architecture"
+  | "resources";
+
+export type PresentationChapter = {
+  readonly id: string;
+  readonly kind: PresentationChapterKind;
+  readonly title: string;
+  readonly summary?: string;
+  readonly sourceRefs: readonly string[];
+  readonly verticalDetails: readonly string[];
+};
+
+export type PresentationDetailPage = {
+  readonly id: "install" | "usage" | "architecture" | "releases" | "readme";
+  readonly route: string;
+  readonly title: string;
+  readonly sourceRefs: readonly string[];
+};
+
+export type PresentationPlan = {
+  readonly mode: PresentationMode;
+  readonly theme: PresentationTheme;
+  readonly chapters: readonly PresentationChapter[];
+  readonly detailPages: readonly PresentationDetailPage[];
+  readonly plannedBy: "rules" | "openai";
+};
+
+export type ProjectProfile = {
+  readonly richnessScore: number;
+  readonly hasVisualStory: boolean;
+  readonly hasDeveloperJourney: boolean;
+  readonly hasArchitectureDepth: boolean;
+  readonly readmeInsightCount: number;
 };
