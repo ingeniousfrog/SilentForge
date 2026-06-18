@@ -86,7 +86,15 @@ function extractSummary(lines: readonly string[], title?: string): string | unde
     if (trimmed.startsWith("#") || trimmed.startsWith("```")) break;
     paragraph.push(trimmed);
   }
-  return paragraph.join(" ").trim() || undefined;
+  return cleanSummary(paragraph.join(" "));
+}
+
+function cleanSummary(value: string): string | undefined {
+  const summary = value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return summary || undefined;
 }
 
 function normalizeHeading(heading: string): string {

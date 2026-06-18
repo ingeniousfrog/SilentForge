@@ -33,6 +33,8 @@ const allowedSourceRefs = new Set([
   "knowledgeBase.techStack"
 ]);
 
+const maxChapterSummaryLength = 240;
+
 export function buildPresentationPlan(model: SiteModel): PresentationPlan {
   const mode = selectMode(model);
   const theme = selectTheme(mode);
@@ -180,7 +182,18 @@ function chapter(
   available = true,
   verticalDetails: readonly string[] = []
 ): Candidate {
-  return { id, kind, title, summary, sourceRefs, verticalDetails, available };
+  return { id, kind, title, summary: normalizeSummary(summary), sourceRefs, verticalDetails, available };
+}
+
+function normalizeSummary(summary: string | undefined): string | undefined {
+  if (!summary) return undefined;
+  const normalized = summary
+    .replace(/<[^>]+>/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+  if (normalized.length === 0) return undefined;
+  if (normalized.length <= maxChapterSummaryLength) return normalized;
+  return `${normalized.slice(0, maxChapterSummaryLength - 1).trimEnd()}…`;
 }
 
 function detailPages(model: SiteModel): readonly PresentationDetailPage[] {

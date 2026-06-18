@@ -13,7 +13,7 @@ export function presentationCss(): string {
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-padding-top: 118px; }
 body {
   margin: 0;
   background:
@@ -100,8 +100,6 @@ body[data-theme="blueprint"] {
   font-size: 0.38em;
 }
 .hero-actions { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
-.navigation-hint { margin-top: 1rem; color: var(--muted); font: 0.32em "SFMono-Regular", monospace; }
-.navigation-hint span { display: inline-block; margin-left: 0.35rem; color: var(--accent); animation: direction-pulse 1.6s ease-in-out infinite; }
 .chapter-context {
   display: grid;
   grid-template-columns: minmax(130px, 0.28fr) minmax(0, 1fr);
@@ -134,6 +132,19 @@ body[data-theme="blueprint"] {
 }
 .chapter-preview a:hover { color: var(--accent); }
 .chapter-preview a span { color: var(--accent); font-family: "SFMono-Regular", monospace; }
+.chapter-more {
+  margin-top: 0.85rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  background: rgba(98, 230, 255, 0.05);
+}
+.chapter-more summary {
+  cursor: pointer;
+  color: var(--accent);
+  font: 0.34em "SFMono-Regular", monospace;
+}
+.chapter-more p { margin: 0.55rem 0 0; color: var(--muted); font-size: 0.38em; line-height: 1.45; }
 .license-card { cursor: pointer; }
 .license-card summary { list-style: none; }
 .license-card summary::-webkit-details-marker { display: none; }
@@ -159,6 +170,19 @@ body[data-theme="blueprint"] {
   color: var(--accent2);
   font-size: 0.3em;
   white-space: pre-wrap;
+}
+.insight-diagram {
+  min-height: 170px;
+  max-height: 320px;
+  overflow: hidden;
+  padding: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(98, 230, 255, 0.05);
+}
+.insight-diagram svg {
+  width: 100%;
+  max-height: 280px;
 }
 .architecture-layout {
   display: grid;
@@ -221,6 +245,7 @@ body[data-theme="blueprint"] {
 .command-stack { display: grid; gap: 0.8rem; }
 .command-stack article { min-width: 0; }
 .command-stack pre { margin-top: 0.4rem; }
+.trimmed-note { margin: 0.45rem 0 0; color: var(--muted); font: 0.32em "SFMono-Regular", monospace; }
 .release-note { display: grid; gap: 0.4rem; margin-top: 1.4rem; padding: 1rem; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
 .release-note strong { font-size: 0.52em; }
 .release-note small { color: var(--muted); font: 0.3em "SFMono-Regular", monospace; }
@@ -235,35 +260,67 @@ a { color: var(--accent); }
   text-decoration: none;
   font-size: 0.38em;
 }
-.site-badge { position: fixed; z-index: 30; top: 18px; left: 22px; color: var(--muted); font: 12px "SFMono-Regular", monospace; }
+.site-badge { position: absolute; z-index: 30; top: 20px; left: 24px; color: var(--muted); font: 12px "SFMono-Regular", monospace; }
 #chapter-nav {
-  position: fixed;
+  position: sticky;
   z-index: 40;
-  top: 50%;
-  right: 18px;
-  width: 268px;
-  transform: translateY(-50%);
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.7rem;
+  top: 12px;
+  width: min(1180px, calc(100vw - 32px));
+  margin: 12px auto 0;
+  display: flex;
+  gap: 0.8rem;
   align-items: center;
-  padding: 0.8rem;
+  padding: 0.7rem 0.8rem 0.85rem;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 20px;
   background: rgba(5, 14, 23, 0.88);
   box-shadow: 0 18px 55px rgba(0, 0, 0, 0.32);
   backdrop-filter: blur(18px);
 }
 body[data-theme="editorial-light"] #chapter-nav { background: rgba(255, 253, 247, 0.92); }
-#reading-progress { height: 3px; overflow: hidden; border-radius: 999px; background: var(--line); }
+#reading-progress { position: absolute; right: 0.9rem; bottom: 0.42rem; left: 0.9rem; height: 3px; overflow: hidden; border-radius: 999px; background: var(--line); }
 #reading-progress span { display: block; width: 0; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 180ms ease; }
-.nav-mode { padding: 0 0.2rem; }
-.nav-mode span, .nav-mode strong { display: block; font: 10px "SFMono-Regular", monospace; }
-.nav-mode span { color: var(--muted); }
-.nav-mode strong { margin-top: 0.2rem; color: var(--accent); }
-.chapter-list { display: grid; gap: 0.2rem; min-width: 0; max-height: 48vh; overflow: auto; scrollbar-width: none; }
-.chapter-list::-webkit-scrollbar { display: none; }
-.chapter-list button, .chapter-controls button {
+.category-list { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.category-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+.category-menu summary {
+  display: block;
+  padding: 0.62rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font: 0.52rem "SFMono-Regular", Menlo, monospace;
+  list-style: none;
+  white-space: nowrap;
+}
+.category-menu summary::-webkit-details-marker { display: none; }
+.category-menu[open] summary, .category-menu.active summary {
+  border-color: var(--line);
+  background: rgba(98, 230, 255, 0.12);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(98, 230, 255, 0.12);
+}
+.chapter-list {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% + 0.55rem);
+  left: 0;
+  display: grid;
+  min-width: 238px;
+  max-width: min(340px, calc(100vw - 32px));
+  gap: 0.22rem;
+  padding: 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(5, 14, 23, 0.96);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+}
+body[data-theme="editorial-light"] .chapter-list { background: rgba(255, 253, 247, 0.96); }
+.chapter-list button {
   border: 0;
   background: transparent;
   color: var(--muted);
@@ -272,28 +329,40 @@ body[data-theme="editorial-light"] #chapter-nav { background: rgba(255, 253, 247
 }
 .chapter-list button {
   width: 100%;
-  padding: 0.45rem 0.6rem;
-  border-radius: 9px;
+  padding: 0.56rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
   font-size: 11px;
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
-.chapter-list button span { margin-right: 0.35rem; color: var(--accent); font-family: "SFMono-Regular", monospace; }
-.chapter-list button.active { background: rgba(98, 230, 255, 0.12); color: var(--ink); }
-.chapter-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem; }
-.chapter-controls button {
+.chapter-list button.active { border-color: var(--line); background: rgba(98, 230, 255, 0.14); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(98, 230, 255, 0.12); }
+.category-menu summary:focus-visible, .chapter-list button:focus-visible, .chapter-next:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chapter-footer {
   display: flex;
-  min-width: 0;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.45rem 0.6rem;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  justify-content: flex-end;
+  margin-top: clamp(2rem, 6vh, 4rem);
 }
-.chapter-controls button:disabled { cursor: default; opacity: 0.35; }
-.chapter-controls span { color: var(--accent); font-size: 18px; }
-.chapter-controls small { max-width: 88px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chapter-next {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: min(340px, 100%);
+  gap: 0.15rem 0.8rem;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(98, 230, 255, 0.12), rgba(110, 247, 177, 0.05));
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+.chapter-next small { color: var(--muted); font: 0.32em "SFMono-Regular", monospace; text-transform: uppercase; }
+.chapter-next strong { overflow: hidden; color: var(--ink); font-size: 0.44em; text-overflow: ellipsis; white-space: nowrap; }
+.chapter-next span { grid-row: 1 / 3; grid-column: 2; color: var(--accent); font-size: 1.4rem; }
+.chapter-next:hover { border-color: var(--accent); transform: translateY(-1px); }
 .diagram-error { width: 100%; padding: 1rem; border: 1px solid #ff7b86; border-radius: 12px; color: #ffadb4; background: rgba(255, 70, 90, 0.08); }
 .diagram-error strong { display: block; margin-bottom: 0.5rem; }
 .diagram-error pre { max-height: 250px; margin: 0; }
@@ -301,8 +370,10 @@ body[data-theme="editorial-light"] #chapter-nav { background: rgba(255, 253, 247
 .detail-shell h1 { font: clamp(42px, 8vw, 82px)/0.95 var(--display); }
 .detail-shell h2 { margin-top: 3rem; }
 .detail-shell .mermaid { padding: 1rem; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
+.detail-shell .readme-diagram { min-height: 240px; overflow: auto; }
+.detail-shell .readme-diagram svg { width: 100%; max-height: 520px; }
 .back { position: fixed; top: 20px; left: 20px; padding: 0.5rem 0.75rem; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; text-decoration: none; }
-.story { padding-right: 304px; }
+.story { padding-right: 0; }
 .story .reveal { width: auto; height: auto; min-height: 100vh; overflow: visible; }
 .story .reveal .slides {
   position: static;
@@ -315,21 +386,18 @@ body[data-theme="editorial-light"] #chapter-nav { background: rgba(255, 253, 247
 .story .reveal .slides > section {
   display: block !important;
   position: relative !important;
-  width: min(1120px, calc(100vw - 352px)) !important;
-  min-height: 78vh;
+  width: min(1120px, calc(100vw - 48px)) !important;
+  min-height: 72vh;
   margin: 0 auto;
-  padding: clamp(6rem, 10vh, 9rem) clamp(1.5rem, 4vw, 4rem);
+  scroll-margin-top: 116px;
+  padding: clamp(4.5rem, 8vh, 7rem) clamp(1.5rem, 4vw, 4rem) clamp(3rem, 6vh, 5rem);
   opacity: 1 !important;
   transform: none !important;
   border-bottom: 1px solid var(--line);
 }
-.story .reveal .slides > section:first-child { min-height: 100vh; }
+.story .reveal .slides > section:first-child { min-height: calc(100vh - 118px); padding-top: clamp(5rem, 10vh, 8rem); }
 .story .reveal .slides > section:last-child { border-bottom: 0; }
 .story .reveal .controls, .story .reveal .progress { display: none; }
-@keyframes direction-pulse {
-  0%, 100% { transform: translateY(0); opacity: 0.65; }
-  50% { transform: translateY(6px); opacity: 1; }
-}
 @media (max-width: 760px) {
   .story { padding-right: 0; }
   .reveal { height: auto; }
@@ -338,22 +406,25 @@ body[data-theme="editorial-light"] #chapter-nav { background: rgba(255, 253, 247
   .reveal .controls, .reveal .progress { display: none; }
   .reveal h1 { font-size: 2em; }
   .metric-grid, .card-grid, .insight-grid, .architecture-layout, .content-split, .technology-layout, .resource-layout { grid-template-columns: 1fr; }
-  .story .reveal .slides > section { width: 100% !important; min-height: auto; padding: 6rem 1.25rem; }
-  .site-badge { position: absolute; }
-  #chapter-nav { position: sticky; top: 0; right: auto; width: auto; transform: none; grid-template-columns: auto minmax(0, 1fr); border-radius: 0; }
-  #reading-progress { position: absolute; right: 0; bottom: 0; left: 0; }
-  .chapter-controls { display: none; }
-  .nav-mode { min-width: 126px; }
-  .chapter-list { display: flex; max-height: none; }
-  .chapter-list button { padding: 0.4rem; }
+  .story .reveal .slides > section { width: 100% !important; min-height: auto; scroll-margin-top: 104px; padding: 4.5rem 1.25rem; }
+  .site-badge { top: 12px; left: 16px; }
+  #chapter-nav { top: 0; width: 100%; margin: 0; border-radius: 0; }
+  #reading-progress { right: 0; bottom: 0; left: 0; }
+  .category-list { flex-wrap: wrap; gap: 0.35rem; }
+  .category-menu summary { padding: 0.48rem 0.65rem; font-size: 0.48rem; }
+  .chapter-list { min-width: 220px; }
+  .chapter-list button { padding: 0.5rem 0.55rem; }
   .chapter-context, .chapter-preview { grid-template-columns: 1fr; }
   .chapter-preview > .section-index { grid-column: auto; }
+  .chapter-footer { justify-content: stretch; }
+  .chapter-next { width: 100%; }
   .reveal section { padding-bottom: 3.5rem !important; }
 }`;
 }
 
 export function presentationBootScript(): string {
-  return `document.addEventListener("DOMContentLoaded",async()=>{
+  return `(()=>{
+  const boot=async()=>{
   const diagrams=Array.from(document.querySelectorAll(".mermaid")).map((element)=>({element,source:element.textContent||""}));
   const showDiagramError=({element,source},message)=>{
     if(element.querySelector("svg"))return;
@@ -394,46 +465,106 @@ export function presentationBootScript(): string {
 
   const chapterButtons=Array.from(document.querySelectorAll("[data-slide-index]"));
   const chapters=Array.from(document.querySelectorAll(".slides > section"));
-  const previousButton=document.querySelector("#previous-chapter");
-  const nextButton=document.querySelector("#next-chapter");
-  const count=document.querySelector("#chapter-count");
+  const chapterNextButtons=Array.from(document.querySelectorAll("[data-next-chapter]"));
+  const categoryMenus=Array.from(document.querySelectorAll(".category-menu"));
   const progress=document.querySelector("#reading-progress span");
-  const titles=chapterButtons.map((button)=>button.textContent?.replace(/^\\d+\\s*/,"").trim()||"Chapter");
   const updateNavigation=(index)=>{
-    chapterButtons.forEach((button,buttonIndex)=>button.classList.toggle("active",buttonIndex===index));
-    chapterButtons[index]?.scrollIntoView({block:"nearest",inline:"nearest"});
-    if(count)count.textContent=String(index+1).padStart(2,"0")+" / "+String(chapterButtons.length).padStart(2,"0");
+    chapterButtons.forEach((button,buttonIndex)=>{
+      const selected=buttonIndex===index;
+      button.classList.toggle("active",selected);
+      if(selected){
+        button.setAttribute("aria-current","page");
+      }else{
+        button.removeAttribute("aria-current");
+      }
+    });
+    categoryMenus.forEach((menu)=>{
+      const selected=Boolean(menu.querySelector("[data-slide-index='"+index+"']"));
+      menu.classList.toggle("active",selected);
+      if(selected){
+        menu.setAttribute("open","");
+      }else{
+        menu.removeAttribute("open");
+      }
+    });
     if(progress)progress.style.width=((index+1)/Math.max(chapterButtons.length,1))*100+"%";
-    if(previousButton){
-      previousButton.disabled=index===0;
-      const label=previousButton.querySelector("small");
-      if(label)label.textContent=index>0?titles[index-1]:"Start";
-    }
-    if(nextButton){
-      nextButton.disabled=index>=chapterButtons.length-1;
-      const label=nextButton.querySelector("small");
-      if(label)label.textContent=index<chapterButtons.length-1?titles[index+1]:"End";
-    }
   };
   let activeIndex=0;
   const goToChapter=(index)=>{
     const nextIndex=Math.max(0,Math.min(index,chapters.length-1));
-    chapters[nextIndex]?.scrollIntoView({behavior:"smooth",block:"start"});
+    const chapter=chapters[nextIndex];
+    if(!chapter)return;
+    const offset=document.querySelector("#chapter-nav")?.getBoundingClientRect().height||96;
+    const top=chapter.getBoundingClientRect().top+window.scrollY-offset-18;
+    window.scrollTo({top:Math.max(top,0),behavior:"smooth"});
   };
   chapterButtons.forEach((button,index)=>button.addEventListener("click",()=>goToChapter(index)));
-  previousButton?.addEventListener("click",()=>goToChapter(activeIndex-1));
-  nextButton?.addEventListener("click",()=>goToChapter(activeIndex+1));
-  const observer=new IntersectionObserver((entries)=>{
-    const visible=entries
-      .filter((entry)=>entry.isIntersecting)
-      .sort((left,right)=>right.intersectionRatio-left.intersectionRatio)[0];
-    if(!visible)return;
-    const index=chapters.indexOf(visible.target);
-    if(index<0||index===activeIndex)return;
+  chapterNextButtons.forEach((button)=>button.addEventListener("click",()=>{
+    const index=Number(button.getAttribute("data-next-chapter"));
+    if(Number.isFinite(index))goToChapter(index);
+  }));
+  categoryMenus.forEach((menu)=>menu.addEventListener("toggle",()=>{
+    if(!menu.hasAttribute("open"))return;
+    categoryMenus.forEach((candidate)=>{
+      if(candidate!==menu)candidate.removeAttribute("open");
+    });
+  }));
+  document.addEventListener("keydown",(event)=>{
+    const target=event.target;
+    if(target instanceof HTMLElement&&["INPUT","TEXTAREA","SELECT","BUTTON","A"].includes(target.tagName))return;
+    if(event.key==="ArrowRight"){
+      event.preventDefault();
+      goToChapter(activeIndex+1);
+    }
+    if(event.key==="ArrowLeft"){
+      event.preventDefault();
+      goToChapter(activeIndex-1);
+    }
+  });
+  const findActiveChapter=()=>{
+    const offset=document.querySelector("#chapter-nav")?.getBoundingClientRect().height||96;
+    const marker=offset+Math.round(window.innerHeight*0.22);
+    return chapters.reduce((current,chapter,index)=>{
+      const top=chapter.getBoundingClientRect().top;
+      return top<=marker?index:current;
+    },0);
+  };
+  const syncNavigation=()=>{
+    const index=findActiveChapter();
+    if(index===activeIndex)return;
     activeIndex=index;
     updateNavigation(activeIndex);
-  },{rootMargin:"-18% 0px -58% 0px",threshold:[0,0.15,0.35,0.6]});
-  chapters.forEach((chapter)=>observer.observe(chapter));
-  updateNavigation(activeIndex);
-});`;
+  };
+  if("IntersectionObserver" in window){
+    const observer=new IntersectionObserver((entries)=>{
+      const visible=entries
+        .filter((entry)=>entry.isIntersecting)
+        .sort((left,right)=>right.intersectionRatio-left.intersectionRatio)[0];
+      if(!visible)return;
+      const index=chapters.indexOf(visible.target);
+      if(index<0||index===activeIndex)return;
+      activeIndex=index;
+      updateNavigation(activeIndex);
+    },{rootMargin:"-18% 0px -58% 0px",threshold:[0,0.15,0.35,0.6]});
+    chapters.forEach((chapter)=>observer.observe(chapter));
+  }else{
+    let frame=0;
+    const scheduleSync=()=>{
+      if(frame)return;
+      frame=requestAnimationFrame(()=>{
+        frame=0;
+        syncNavigation();
+      });
+    };
+    window.addEventListener("scroll",scheduleSync,{passive:true});
+    window.addEventListener("resize",scheduleSync);
+  }
+    updateNavigation(activeIndex);
+  };
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>void boot());
+  }else{
+    void boot();
+  }
+})();`;
 }

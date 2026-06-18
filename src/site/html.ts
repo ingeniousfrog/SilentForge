@@ -1,9 +1,14 @@
 import type { PresentationChapter, PresentationPlan, SiteModel } from "../types.js";
-import { firstCodeBlock, selectReadmeInsights, summarizeMarkdown } from "../presentation/readme.js";
+import {
+  firstMarkdownCodeBlock,
+  isMermaidCodeBlock,
+  selectReadmeInsights,
+  summarizeMarkdown
+} from "../presentation/readme.js";
 import { escapeHtml, safeExternalUrl } from "./security.js";
 
 export function renderPresentation(model: SiteModel, plan: PresentationPlan): string {
-  const slides = plan.chapters.map((chapter) => renderChapter(model, plan, chapter)).join("");
+  const slides = plan.chapters.map((chapter, index) => renderChapter(model, plan, chapter, index)).join("");
   const navigation = renderNavigation(plan);
   const description = model.readme.summary ?? model.repository.description ?? model.repository.fullName;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escapeHtml(
@@ -15,9 +20,16 @@ export function renderPresentation(model: SiteModel, plan: PresentationPlan): st
   )} · ${escapeHtml(plan.mode)}</div>${navigation}<div class="reveal"><div class="slides">${slides}</div></div><script src="assets/mermaid.js"></script><script src="assets/reveal.js"></script><script src="assets/site.js"></script></body></html>`;
 }
 
-function renderChapter(model: SiteModel, plan: PresentationPlan, chapter: PresentationChapter): string {
+function renderChapter(
+  model: SiteModel,
+  plan: PresentationPlan,
+  chapter: PresentationChapter,
+  index: number
+): string {
   const main = renderChapterContent(model, plan, chapter);
-  return `<section id="${escapeHtml(chapter.id)}" data-chapter-title="${escapeHtml(chapter.title)}">${main}</section>`;
+  return `<section id="${escapeHtml(chapter.id)}" data-chapter-title="${escapeHtml(
+    chapter.title
+  )}">${main}${chapterFooter(plan, index)}</section>`;
 }
 
 function renderChapterContent(model: SiteModel, plan: PresentationPlan, chapter: PresentationChapter): string {
@@ -26,11 +38,12 @@ function renderChapterContent(model: SiteModel, plan: PresentationPlan, chapter:
   )}</h${chapter.kind === "hero" ? "1" : "2"}>${chapter.summary ? `<p class="lede">${escapeHtml(chapter.summary)}</p>` : ""}`;
   if (chapter.kind === "hero") return `${heading}${topicTags(model)}${metrics(model)}${chapterPreview(
     plan
-  )}<div class="hero-actions">${primaryLinks(model)}<span class="navigation-hint">Scroll down to explore <span aria-hidden="true">↓</span></span></div>`;
+  )}<div class="hero-actions">${primaryLinks(model)}</div>`;
   if (chapter.kind === "features") return `${heading}${chapterContext(
     "README capabilities",
     "These points come directly from the repository README, paired with structural signals from the codebase."
   )}<div class="content-split"><div class="card-grid feature-grid">${model.readme.features
+    .slice(0, 6)
     .map(
       (feature, index) =>
         `<article class="card feature-card"><span class="section-index">${String(index + 1).padStart(
@@ -38,7 +51,12 @@ function renderChapterContent(model: SiteModel, plan: PresentationPlan, chapter:
           "0"
         )}</span><p>${escapeHtml(feature)}</p></article>`
     )
-    .join("")}</div>${repositorySnapshot(model)}</div>`;
+    .join("")}</div>${repositorySnapshot(model)}${overflowNote(
+    model.readme.features.length,
+    6,
+    "feature notes",
+    "details/readme.html"
+  )}</div>`;
   if (chapter.kind === "visuals") return `${heading}${chapterContext(
     "Repository visuals",
     `${model.screenshots.length} visual ${model.screenshots.length === 1 ? "asset was" : "assets were"} detected in README and repository paths.`
@@ -51,7 +69,16 @@ function renderChapterContent(model: SiteModel, plan: PresentationPlan, chapter:
   if (chapter.kind === "usage") return `${heading}${chapterContext(
     "Developer path",
     "The commands below are extracted from the project documentation; open the detail pages for the fuller source sections."
-  )}<div class="content-split"><div class="command-stack">${model.readme.installation ? `<article><span class="section-index">Install</span><pre><code>${escapeHtml(model.readme.installation)}</code></pre></article>` : ""}${model.readme.usage ? `<article><span class="section-index">Run</span><pre><code>${escapeHtml(model.readme.usage)}</code></pre></article>` : ""}</div><aside class="evidence-panel"><span class="section-index">Continue reading</span>${chapterDetailLinks(plan, chapter)}</aside></div>`;
+  )}<div class="content-split"><div class="command-stack">${commandPreview(
+    "Install",
+    model.readme.installation
+  )}${commandPreview(
+    "Run",
+    model.readme.usage
+  )}</div><aside class="evidence-panel"><span class="section-index">Continue reading</span>${chapterDetailLinks(
+    plan,
+    chapter
+  )}${commandOverflow(model)}</aside></div>`;
   if (chapter.kind === "readme-insights") return `${heading}${chapterContext(
     "Documentation depth",
     "Longer README sections are condensed here so the main page remains readable without hiding the underlying material."
@@ -60,12 +87,12 @@ function renderChapterContent(model: SiteModel, plan: PresentationPlan, chapter:
     model.readme.title
   )
     .map((section) => {
-      const code = firstCodeBlock(section.content);
-      return `<article class="insight-card"><span class="section-index">${escapeHtml(section.heading)}</span><p>${escapeHtml(
-        summarizeMarkdown(section.content)
-      )}</p>${code ? `<code>${escapeHtml(code.split("\n").slice(0, 3).join("\n"))}</code>` : ""}</article>`;
+      const codeBlock = firstMarkdownCodeBlock(section.content);
+      return `<article class="insight-card"><span class="section-index">${escapeHtml(
+        section.heading
+      )}</span>${summaryParagraph(summarizeMarkdown(section.content))}${renderInsightCodeBlock(codeBlock)}</article>`;
     })
-    .join("")}</div>${detailLink(plan, "readme")}`;
+    .join("")}</div>${detailLink(plan, "readme")}${readmeOverflow(model)}`;
   if (chapter.kind === "technology") return `${heading}${chapterContext(
     "Detected stack",
     "Technology labels are inferred from configuration files and file extensions, then checked against repository structure."
@@ -76,7 +103,7 @@ function renderChapterContent(model: SiteModel, plan: PresentationPlan, chapter:
   )}<div class="architecture-layout"><div class="diagram-shell"><div class="mermaid">${escapeHtml(
     model.knowledgeBase.mermaid
   )}</div></div><div class="module-stack">${model.knowledgeBase.moduleMap
-    .slice(0, 5)
+    .slice(0, 4)
     .map(
       (module) =>
         `<article class="module-row"><strong>${escapeHtml(module.heading)}</strong><span>${escapeHtml(module.content)}</span></article>`
@@ -94,19 +121,30 @@ function renderChapterContent(model: SiteModel, plan: PresentationPlan, chapter:
 }
 
 function renderNavigation(plan: PresentationPlan): string {
-  const items = plan.chapters
-    .map(
-      (chapter, index) =>
-        `<button type="button" data-slide-index="${index}"><span>${String(index + 1).padStart(2, "0")}</span>${escapeHtml(
-          chapter.title
-        )}</button>`
-    )
+  const categories = [
+    { key: "overview", label: "Overview", kinds: ["hero", "features"] },
+    { key: "resources", label: "Resources", kinds: ["resources"] },
+    { key: "code-wiki", label: "Code Wiki", kinds: ["usage", "readme-insights", "technology", "architecture"] },
+    { key: "preview", label: "Preview", kinds: ["visuals"] }
+  ];
+  const groups = categories
+    .map((category, categoryIndex) => {
+      const items = plan.chapters
+        .map((chapter, index) => ({ chapter, index }))
+        .filter(({ chapter }) => category.kinds.includes(chapter.kind))
+        .map(
+          ({ chapter, index }) =>
+            `<button type="button" aria-controls="${escapeHtml(chapter.id)}" data-slide-index="${index}">${escapeHtml(
+              chapter.title
+            )}</button>`
+        )
+        .join("");
+      return `<details class="category-menu" data-category-key="${escapeHtml(category.key)}"${
+        categoryIndex === 0 ? " open" : ""
+      }><summary>${escapeHtml(category.label)}</summary><div class="chapter-list">${items}</div></details>`;
+    })
     .join("");
-  return `<nav id="chapter-nav" aria-label="Page chapters"><div id="reading-progress" aria-hidden="true"><span></span></div><div class="nav-mode"><span id="navigation-mode">Scroll down to explore ↓</span><strong id="chapter-count">01 / ${String(
-    plan.chapters.length
-  ).padStart(2, "0")}</strong></div><div class="chapter-list">${items}</div><div class="chapter-controls"><button id="previous-chapter" type="button" aria-label="Previous chapter"><span>↑</span><small>Start</small></button><button id="next-chapter" type="button" aria-label="Next chapter"><small>${
-    plan.chapters[1] ? escapeHtml(plan.chapters[1].title) : "End"
-  }</small><span>↓</span></button></div></nav>`;
+  return `<nav id="chapter-nav" class="chapter-tabs" aria-label="Page chapters"><div class="category-list">${groups}</div><div id="reading-progress" aria-hidden="true"><span></span></div></nav>`;
 }
 
 function chapterContext(label: string, description: string): string {
@@ -123,6 +161,58 @@ function chapterPreview(plan: PresentationPlan): string {
         )}</a>`
     )
     .join("")}</div>`;
+}
+
+function chapterFooter(plan: PresentationPlan, index: number): string {
+  const next = plan.chapters[index + 1];
+  if (!next) return `<footer class="chapter-footer"><a class="detail-link" href="#project">Back to top ↑</a></footer>`;
+  return `<footer class="chapter-footer"><button class="chapter-next" type="button" data-next-chapter="${
+    index + 1
+  }"><small>Next chapter</small><strong>${escapeHtml(next.title)}</strong><span aria-hidden="true">↓</span></button></footer>`;
+}
+
+function commandPreview(label: string, content?: string): string {
+  if (!content) return "";
+  const lines = content.split("\n").filter((line) => line.trim().length > 0);
+  const preview = lines.slice(0, 5).join("\n");
+  const hiddenCount = Math.max(lines.length - 5, 0);
+  return `<article><span class="section-index">${escapeHtml(label)}</span><pre><code>${escapeHtml(
+    preview
+  )}</code></pre>${hiddenCount > 0 ? `<p class="trimmed-note">+ ${hiddenCount} more lines in detail pages</p>` : ""}</article>`;
+}
+
+function renderInsightCodeBlock(
+  codeBlock: ReturnType<typeof firstMarkdownCodeBlock>
+): string {
+  if (!codeBlock) return "";
+  if (isMermaidCodeBlock(codeBlock)) {
+    return `<div class="insight-diagram mermaid">${escapeHtml(codeBlock.code)}</div>`;
+  }
+  return `<code>${escapeHtml(codeBlock.code.split("\n").slice(0, 3).join("\n"))}</code>`;
+}
+
+function summaryParagraph(summary: string): string {
+  return summary.trim().length > 0 ? `<p>${escapeHtml(summary)}</p>` : "";
+}
+
+function commandOverflow(model: SiteModel): string {
+  const installOverflow = Math.max((model.readme.installation?.split("\n").length ?? 0) - 5, 0);
+  const usageOverflow = Math.max((model.readme.usage?.split("\n").length ?? 0) - 5, 0);
+  const totalOverflow = installOverflow + usageOverflow;
+  if (totalOverflow <= 0) return "";
+  return `<details class="chapter-more"><summary>${totalOverflow} extra command lines kept out of the overview</summary><p>Open the installation and usage detail pages for the full commands.</p></details>`;
+}
+
+function readmeOverflow(model: SiteModel): string {
+  if (model.readme.sections.length <= 0) return "";
+  return `<details class="chapter-more"><summary>Full README sections live in the detail page</summary><p>The overview keeps only summaries and short code previews so this chapter stays scannable.</p></details>`;
+}
+
+function overflowNote(total: number, visible: number, label: string, href: string): string {
+  if (total <= visible) return "";
+  return `<details class="chapter-more"><summary>${total - visible} more ${label}</summary><p><a href="${escapeHtml(
+    href
+  )}">Open the detail page for the full list.</a></p></details>`;
 }
 
 function releaseSummary(model: SiteModel): string {

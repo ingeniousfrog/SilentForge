@@ -6,6 +6,17 @@ describe("parseReadme", () => {
     const result = parseReadme("# Widget\n\n[中文 README](README-CN.md)\n\nActual project summary.");
     expect(result.summary).toBe("Actual project summary.");
   });
+
+  it("strips inline HTML tags from the selected summary", () => {
+    const result = parseReadme(
+      "# DeskTank\n\nA macOS menu bar tank game that turns your Desktop files and folders into the battlefield. </p>"
+    );
+
+    expect(result.summary).toBe(
+      "A macOS menu bar tank game that turns your Desktop files and folders into the battlefield."
+    );
+  });
+
   it("extracts core product documentation without inventing missing content", () => {
     const parsed = parseReadme(`# WidgetKit
 

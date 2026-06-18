@@ -1,5 +1,9 @@
 import type { PresentationDetailPage, PresentationPlan, SiteModel } from "../types.js";
-import { firstCodeBlock, summarizeMarkdown } from "../presentation/readme.js";
+import {
+  firstMarkdownCodeBlock,
+  isMermaidCodeBlock,
+  summarizeMarkdown
+} from "../presentation/readme.js";
 import { escapeHtml, safeExternalUrl } from "./security.js";
 
 export function renderDetailPage(model: SiteModel, plan: PresentationPlan, page: PresentationDetailPage): string {
@@ -32,10 +36,10 @@ function detailContent(model: SiteModel, id: PresentationDetailPage["id"]): stri
   if (id === "readme") {
     return model.readme.sections
       .map((section) => {
-        const code = firstCodeBlock(section.content);
-        return `<section class="card"><h2>${escapeHtml(section.heading)}</h2><p>${escapeHtml(
+        const code = firstMarkdownCodeBlock(section.content);
+        return `<section class="card"><h2>${escapeHtml(section.heading)}</h2>${summaryParagraph(
           summarizeMarkdown(section.content, 420)
-        )}</p>${codeBlock(code)}</section>`;
+        )}${readmeCodeBlock(code)}</section>`;
       })
       .join("");
   }
@@ -57,6 +61,18 @@ function document(model: SiteModel, plan: PresentationPlan, body: string): strin
 
 function codeBlock(value: string | undefined): string {
   return value ? `<pre><code>${escapeHtml(value)}</code></pre>` : "";
+}
+
+function readmeCodeBlock(block: ReturnType<typeof firstMarkdownCodeBlock>): string {
+  if (!block) return "";
+  if (isMermaidCodeBlock(block)) {
+    return `<div class="readme-diagram mermaid">${escapeHtml(block.code)}</div>`;
+  }
+  return codeBlock(block.code);
+}
+
+function summaryParagraph(summary: string): string {
+  return summary.trim().length > 0 ? `<p>${escapeHtml(summary)}</p>` : "";
 }
 
 function list(items: readonly string[]): string {

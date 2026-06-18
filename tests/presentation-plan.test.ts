@@ -79,6 +79,32 @@ describe("buildPresentationPlan", () => {
     expect(plan.chapters.some((chapter) => chapter.kind === "readme-insights")).toBe(true);
   });
 
+  it("keeps deterministic chapter summaries within validation limits", () => {
+    const longSummary =
+      "DeskTank turns a macOS desktop into a tiny battlefield where tanks navigate around desktop icons, folders, and Finder state changes while keeping the experience playful, local-first, and lightweight enough to run during short breaks without turning the project overview into a long README paragraph.";
+    const plan = buildPresentationPlan(
+      model({
+        readme: {
+          ...model().readme,
+          summary: longSummary
+        }
+      })
+    );
+
+    expect(plan.chapters[0].summary?.length).toBeLessThanOrEqual(240);
+    expect(() =>
+      validatePresentationPlan(
+        plan,
+        model({
+          readme: {
+            ...model().readme,
+            summary: longSummary
+          }
+        })
+      )
+    ).not.toThrow();
+  });
+
   it("uses a compact story and omits empty detail pages for sparse repositories", () => {
     const sparse = model({
       repository: { ...model().repository, homepage: undefined, description: undefined },
