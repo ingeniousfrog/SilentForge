@@ -36,25 +36,27 @@ export function workbenchTemplate(styles: string, clientScript: string): string 
               <input id="use-ai" type="checkbox" />
               <span><strong data-i18n="aiTitle">AI-assisted structure.</strong> <span data-i18n="aiBody">When enabled, extracted repository information is sent to OpenAI to arrange the presentation. Repository facts remain source-bound, and failures fall back to local rules.</span></span>
             </label>
-            <section class="output-settings" aria-label="Output settings" data-i18n-aria="outputSettingsAria">
-              <div class="output-settings-header">
-                <div class="output-settings-copy">
-                  <span class="output-settings-badge" data-i18n="outputBadge">Generated site</span>
-                  <div class="output-settings-title-row">
-                    <h2 class="output-settings-title" data-i18n="outputTitle">Output settings</h2>
-                    <span class="info-tip">
-                      <button type="button" class="info-button" aria-label="What do output settings control?" data-i18n-aria="outputInfoAria">i</button>
-                      <span class="info-tooltip" role="tooltip" data-i18n="outputInfo">
-                        These options shape the static site files SilentForge generates: index.html, detail pages, Preview, and ZIP download.
-                        They do not change this Workbench interface.
-                        Mode controls narrative structure. Theme controls colors and typography on every generated page.
-                        Chapter toggles include or omit sections when the repository has matching content.
+            <details class="output-settings" id="output-settings">
+              <summary class="output-settings-summary">
+                <div class="output-settings-header">
+                  <div class="output-settings-copy">
+                    <span class="output-settings-badge" data-i18n="outputBadge">Generated site</span>
+                    <div class="output-settings-title-row">
+                      <h2 class="output-settings-title" data-i18n="outputTitle">Output settings</h2>
+                      <span class="info-tip">
+                        <button type="button" class="info-button" aria-label="What do output settings control?" data-i18n-aria="outputInfoAria">i</button>
+                        <span class="info-tooltip" role="tooltip" data-i18n="outputInfo">
+                          These options shape the static site files SilentForge generates: index.html, detail pages, Preview, and ZIP download.
+                          They do not change this Workbench interface.
+                          Mode controls narrative structure. Theme controls colors and typography on every generated page.
+                          Chapter toggles include or omit sections when the repository has matching content.
+                        </span>
                       </span>
-                    </span>
+                    </div>
+                    <p class="output-settings-lead" data-i18n="outputLead">Applies to Preview, ZIP, and every generated HTML page—not this Workbench UI.</p>
                   </div>
-                  <p class="output-settings-lead" data-i18n="outputLead">Applies to Preview, ZIP, and every generated HTML page—not this Workbench UI.</p>
                 </div>
-              </div>
+              </summary>
               <div class="generation-options">
                 <div class="option-grid">
                   <label>
@@ -117,7 +119,7 @@ export function workbenchTemplate(styles: string, clientScript: string): string 
                   <label><input type="checkbox" data-chapter-toggle="resources" checked /> <span data-i18n="chapterResources">Resources</span></label>
                 </div>
               </div>
-            </section>
+            </details>
           </form>
           <section id="history" class="history" aria-label="Recent repositories">
             <div class="history-header">

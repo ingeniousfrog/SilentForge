@@ -192,8 +192,37 @@ ${workbenchShellCss()}
           rgba(3, 10, 18, 0.72);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
+      .output-settings > summary {
+        list-style: none;
+        cursor: pointer;
+      }
+      .output-settings > summary::-webkit-details-marker {
+        display: none;
+      }
+      .output-settings-summary {
+        position: relative;
+        padding-right: 28px;
+      }
+      .output-settings-summary::after {
+        position: absolute;
+        top: 18px;
+        right: 16px;
+        color: var(--cyan);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        content: "+";
+      }
+      .output-settings[open] > .output-settings-summary::after {
+        content: "−";
+      }
       .output-settings-header {
-        padding: 14px 16px 0;
+        padding: 14px 16px 14px;
+      }
+      .output-settings[open] .output-settings-header {
+        padding-bottom: 0;
+      }
+      .output-settings .generation-options {
+        padding: 0 16px 16px;
       }
       .output-settings-copy {
         display: grid;
@@ -518,6 +547,50 @@ ${workbenchShellCss()}
       }
       .actions {
         margin-top: var(--space-2);
+      }
+      .secondary-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 10px 14px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        background: rgba(98, 230, 255, 0.06);
+        color: var(--text);
+        cursor: pointer;
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        text-decoration: none;
+      }
+      .secondary-button:hover {
+        border-color: var(--cyan);
+        background: rgba(98, 230, 255, 0.12);
+      }
+      .completion-page {
+        display: grid;
+        gap: var(--space-2);
+        padding: var(--space-3);
+        border: 1px solid rgba(110, 247, 177, 0.28);
+        border-radius: var(--radius-md);
+        background:
+          linear-gradient(135deg, rgba(110, 247, 177, 0.08), rgba(98, 230, 255, 0.04)),
+          rgba(8, 14, 22, 0.72);
+      }
+      .completion-page h2 {
+        margin: 0;
+        font-size: 1.35rem;
+        letter-spacing: -0.02em;
+      }
+      .completion-page p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+      .completion-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
       }
       .download {
         min-height: 44px;

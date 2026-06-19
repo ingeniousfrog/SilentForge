@@ -176,8 +176,8 @@ const en: MessageTree = {
       releaseHomepageGap: "Homepage metadata was not detected.",
       releaseHomepageRecommendation: "Add a homepage link for documentation, demo, or product context.",
       releaseTopicsStrength: "Repository topics improve generated positioning.",
-      releaseTopicsGap: "Repository topics were not detected.",
-      releaseTopicsRecommendation: "Add GitHub topics that describe the project domain and stack."
+      releaseTopicsGap: "Repository Topics were not detected.",
+      releaseTopicsRecommendation: "Add GitHub Topics in the repository About section to describe the project domain and stack."
     }
   },
   generator: {
@@ -274,6 +274,10 @@ const en: MessageTree = {
     generationStarted: "Generation started. Listening for repository signals...",
     generationComplete: "Ready. Preview and ZIP now use the same static presentation files.",
     generationFailed: "Generation failed.",
+    completionTitle: "Presentation ready",
+    completionBody: "Preview and ZIP use the same generated files. Open Preview to inspect the site, or return home to generate another repository.",
+    viewPreview: "Open preview",
+    backToHome: "Back to home",
     previewTitle: "Generated SilentForge preview",
     langAria: "Language",
     readinessTitle: "Repository Readiness",
@@ -305,7 +309,7 @@ const en: MessageTree = {
     defaultBranch: "Default branch",
     extractedFeatures: "Extracted Features",
     noFeatures: "No feature list was detected in README sections.",
-    noTopics: "No repository topics were found in GitHub metadata.",
+    noTopics: "This repository has no GitHub Topics (subject tags) in its metadata.",
     configFiles: "Configuration Files",
     repoFiles: "Repository Files",
     noConfigFiles: "No known configuration files were detected from the repository tree.",
@@ -494,8 +498,8 @@ const zh: MessageTree = {
       releaseHomepageGap: "未检测到主页元数据。",
       releaseHomepageRecommendation: "添加文档、demo 或产品主页链接。",
       releaseTopicsStrength: "仓库 topics 有助于定位。",
-      releaseTopicsGap: "未检测到仓库 topics。",
-      releaseTopicsRecommendation: "添加描述项目领域与技术栈的 GitHub topics。"
+      releaseTopicsGap: "未检测到 Topics 主题标签。",
+      releaseTopicsRecommendation: "可在 GitHub 仓库 About 区域添加 Topics，用于描述项目领域与技术栈。"
     }
   },
   generator: {
@@ -586,6 +590,10 @@ const zh: MessageTree = {
     generationStarted: "生成已开始，正在监听仓库信号…",
     generationComplete: "就绪。Preview 与 ZIP 现在使用相同的静态演示文件。",
     generationFailed: "生成失败。",
+    completionTitle: "生成完成",
+    completionBody: "Preview 与 ZIP 使用同一套生成文件。可打开 Preview 查看站点，或返回首页生成另一个仓库。",
+    viewPreview: "查看 Preview",
+    backToHome: "返回首页",
     previewTitle: "SilentForge 生成预览",
     langAria: "语言",
     readinessTitle: "仓库就绪度",
@@ -617,7 +625,7 @@ const zh: MessageTree = {
     defaultBranch: "默认分支",
     extractedFeatures: "提取的特性",
     noFeatures: "未在 README 章节中检测到特性列表。",
-    noTopics: "未在 GitHub 元数据中找到仓库 topics。",
+    noTopics: "该仓库未设置 GitHub Topics（主题标签）。",
     configFiles: "配置文件",
     repoFiles: "仓库文件",
     noConfigFiles: "未从仓库树中检测到已知配置文件。",

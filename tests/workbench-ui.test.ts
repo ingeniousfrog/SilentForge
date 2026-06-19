@@ -38,7 +38,9 @@ describe("workbenchHtml", () => {
     expect(html).toContain("Repository Readiness");
     expect(html).toContain("renderDiagnostics");
     expect(html).toContain("Dark Signal");
-    expect(html).toContain("Output settings");
+    expect(html).toContain('class="output-settings"');
+    expect(html).toContain('id="output-settings"');
+    expect(html).toContain("output-settings-summary");
     expect(html).toContain("Generated site");
     expect(html).toContain("info-tooltip");
     expect(html).toContain("What do output settings control?");
@@ -52,6 +54,8 @@ describe("workbenchHtml", () => {
     expect(workbenchStyles()).toContain("--bg:");
     expect(workbenchClientScript("{}")).toContain("collectGenerationOptions");
     expect(workbenchClientScript("{}")).toContain("applyLocale");
-    expect(workbenchClientScript("{}")).toContain("locale: state.locale");
+    expect(workbenchClientScript("{}")).toContain("renderCompletionPage");
+    expect(workbenchClientScript("{}")).toContain("resetToHome");
+    expect(workbenchClientScript("{}")).toContain("backToHome");
   });
 });

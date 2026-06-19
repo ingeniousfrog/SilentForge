@@ -1,6 +1,7 @@
 export function workbenchClientScript(i18nJson: string): string {
   return `      const I18N = ${i18nJson};
       const localeKey = "silentforge.locale";
+      const outputSettingsKey = "silentforge.outputSettingsOpen";
       const historyKey = "silentforge.recentRepositories";
       const legacyHistoryKey = "reposite.recentRepositories";
       const maxHistory = 6;
@@ -9,7 +10,8 @@ export function workbenchClientScript(i18nJson: string): string {
         job: null,
         resources: null,
         activeTab: "overview",
-        locale: "en"
+        locale: "en",
+        showCompletionPage: false
       };
 
       const shell = document.querySelector(".shell");
@@ -31,6 +33,32 @@ export function workbenchClientScript(i18nJson: string): string {
       const chapterToggleEls = Array.from(document.querySelectorAll("[data-chapter-toggle]"));
       const tabs = Array.from(document.querySelectorAll(".tab"));
       const langPills = Array.from(document.querySelectorAll(".lang-pill"));
+      const outputSettingsEl = document.querySelector("#output-settings");
+
+      function bindOutputSettings() {
+        if (!outputSettingsEl) return;
+        outputSettingsEl.querySelectorAll(".info-button").forEach((button) => {
+          button.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          });
+        });
+        try {
+          const stored = localStorage.getItem(outputSettingsKey);
+          if (stored === "true") {
+            outputSettingsEl.open = true;
+          }
+        } catch {
+          // Ignore storage failures.
+        }
+        outputSettingsEl.addEventListener("toggle", () => {
+          try {
+            localStorage.setItem(outputSettingsKey, outputSettingsEl.open ? "true" : "false");
+          } catch {
+            // Ignore storage failures.
+          }
+        });
+      }
 
       function t(key, params) {
         const catalog = I18N[state.locale] || I18N.en;
@@ -73,6 +101,16 @@ export function workbenchClientScript(i18nJson: string): string {
         if (state.resources) {
           renderContent();
         }
+        if (state.showCompletionPage && shell.dataset.status === "complete") {
+          const backHome = contentEl.querySelector("#back-home-button");
+          if (backHome) backHome.textContent = t("backToHome");
+          const previewButton = contentEl.querySelector("#completion-preview-button");
+          if (previewButton) previewButton.textContent = t("viewPreview");
+          const title = contentEl.querySelector(".completion-page h2");
+          if (title) title.textContent = t("completionTitle");
+          const body = contentEl.querySelector(".completion-page p");
+          if (body) body.textContent = t("completionBody");
+        }
       }
 
       langPills.forEach((pill) => {
@@ -84,6 +122,8 @@ export function workbenchClientScript(i18nJson: string): string {
       } catch {
         applyLocale("en");
       }
+
+      bindOutputSettings();
 
       renderHistory();
       renderMode("idle");
@@ -101,6 +141,7 @@ export function workbenchClientScript(i18nJson: string): string {
         renderHistory();
         renderMode("active");
         renderStatus("submitting", t("creatingJob"));
+        state.showCompletionPage = false;
         startButton.disabled = true;
         timelineEl.innerHTML = "";
         state.job = null;
@@ -133,6 +174,7 @@ export function workbenchClientScript(i18nJson: string): string {
       tabs.forEach((tab) => {
         tab.addEventListener("click", () => {
           state.activeTab = tab.dataset.tab;
+          state.showCompletionPage = false;
           tabs.forEach((item) => item.classList.toggle("active", item === tab));
           renderContent();
         });
@@ -153,6 +195,9 @@ export function workbenchClientScript(i18nJson: string): string {
               downloadEl.href = "/api/jobs/" + id + "/download";
               downloadEl.removeAttribute("aria-disabled");
               startButton.disabled = false;
+              state.showCompletionPage = true;
+              tabs.forEach((item) => item.classList.remove("active"));
+              renderContent();
             }
 
             if (type === "error") {
@@ -197,6 +242,12 @@ export function workbenchClientScript(i18nJson: string): string {
       }
 
       function renderContent() {
+        if (state.showCompletionPage && shell.dataset.status === "complete") {
+          contentEl.innerHTML = renderCompletionPage();
+          bindCompletionPageActions();
+          return;
+        }
+
         if (!state.resources) {
           contentEl.innerHTML = renderPending();
           return;
@@ -209,6 +260,52 @@ export function workbenchClientScript(i18nJson: string): string {
           preview: renderPreview
         };
         contentEl.innerHTML = renderers[state.activeTab]();
+      }
+
+      function renderCompletionPage() {
+        const repoName = state.resources?.repository?.fullName || state.job?.repoUrl || "";
+        return '<section class="completion-page">' +
+          '<h2>' + escapeHtml(t("completionTitle")) + '</h2>' +
+          '<p>' + escapeHtml(t("completionBody")) + '</p>' +
+          (repoName ? '<p class="empty">' + escapeHtml(repoName) + '</p>' : "") +
+          '<div class="completion-actions">' +
+          '<button type="button" class="secondary-button" id="completion-preview-button">' + escapeHtml(t("viewPreview")) + '</button>' +
+          '<a class="secondary-button" id="completion-download-button" href="' + escapeAttribute(downloadEl.href) + '">' + escapeHtml(t("downloadZip")) + '</a>' +
+          '<button type="button" class="secondary-button" id="back-home-button">' + escapeHtml(t("backToHome")) + '</button>' +
+          '</div></section>';
+      }
+
+      function bindCompletionPageActions() {
+        const previewButton = contentEl.querySelector("#completion-preview-button");
+        const backHomeButton = contentEl.querySelector("#back-home-button");
+        previewButton?.addEventListener("click", () => {
+          state.showCompletionPage = false;
+          state.activeTab = "preview";
+          tabs.forEach((item) => item.classList.toggle("active", item.dataset.tab === "preview"));
+          renderContent();
+        });
+        backHomeButton?.addEventListener("click", () => resetToHome());
+      }
+
+      function resetToHome() {
+        renderMode("idle");
+        shell.dataset.status = "idle";
+        state.job = null;
+        state.resources = null;
+        state.showCompletionPage = false;
+        state.activeTab = "overview";
+        timelineEl.innerHTML = "";
+        statusEl.textContent = t("statusWaiting");
+        statusPill.textContent = t("statusIdle");
+        statusPill.className = "status-pill";
+        formHint.textContent = t("hint");
+        downloadEl.setAttribute("aria-disabled", "true");
+        downloadEl.href = "#";
+        startButton.disabled = false;
+        tabs.forEach((item) => item.classList.toggle("active", item.dataset.tab === "overview"));
+        renderContent();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        input.focus();
       }
 
       function renderPending() {
