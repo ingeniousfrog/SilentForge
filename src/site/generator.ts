@@ -14,13 +14,14 @@ export type StaticSiteOptions = {
 };
 
 export async function generateStaticSite(model: SiteModel, outputDir: string, options: StaticSiteOptions = {}): Promise<void> {
-  const plan = validatePresentationPlan(options.presentationPlan ?? buildPresentationPlan(model), model);
+  const basePlan = options.presentationPlan ?? buildPresentationPlan(model);
+  const plan = validatePresentationPlan(basePlan, model, { locale: basePlan.locale });
   const mermaidScriptPath = require.resolve("mermaid/dist/mermaid.min.js");
   const files = [
     { path: "index.html", content: renderPresentation(model, plan) },
     { path: "assets/mermaid.js", content: await readFile(mermaidScriptPath, "utf8") },
     { path: "assets/site.css", content: presentationCss() },
-    { path: "assets/site.js", content: presentationBootScript() },
+    { path: "assets/site.js", content: presentationBootScript(plan.locale) },
     { path: "data/site.json", content: `${JSON.stringify({ ...model, presentationPlan: plan }, null, 2)}\n` },
     { path: "README.md", content: siteReadme(model) },
     ...plan.detailPages.map((page) => ({ path: page.route, content: renderDetailPage(model, plan, page) }))

@@ -9,6 +9,7 @@
   "files": [
     "dist",
     "README.md",
+    "README-CN.md",
     "LICENSE",
     "package.json"
   ],

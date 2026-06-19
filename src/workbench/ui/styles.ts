@@ -52,6 +52,35 @@ ${workbenchShellCss()}
         font-weight: 600;
         letter-spacing: -0.02em;
       }
+      .brand-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-shrink: 0;
+      }
+      .lang-switch {
+        display: inline-flex;
+        padding: 2px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(8, 14, 22, 0.72);
+      }
+      .lang-pill {
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        line-height: 1;
+        padding: 6px 10px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      .lang-pill.active {
+        color: var(--ink);
+        background: rgba(98, 230, 255, 0.12);
+        box-shadow: inset 0 0 0 1px rgba(98, 230, 255, 0.42);
+      }
       .beacon {
         display: inline-flex;
         align-items: center;

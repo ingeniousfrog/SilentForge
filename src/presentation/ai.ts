@@ -129,5 +129,5 @@ export async function requestOpenAiPlan(model: SiteModel, fallback: Presentation
     }
   });
   if (!response.output_parsed) throw new Error("OpenAI returned no presentation plan.");
-  return { ...response.output_parsed, plannedBy: "openai" };
+  return { ...response.output_parsed, plannedBy: "openai", locale: fallback.locale };
 }

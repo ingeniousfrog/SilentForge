@@ -13,7 +13,7 @@ describe("createCli", () => {
   it("registers init generation option flags", () => {
     const init = createCli().commands.find((command) => command.name() === "init");
     expect(init?.options.map((option) => option.long)).toEqual(
-      expect.arrayContaining(["--output", "--ai", "--mode", "--theme", "--chapters", "--token"])
+      expect.arrayContaining(["--output", "--ai", "--mode", "--theme", "--chapters", "--locale", "--token"])
     );
   });
 });

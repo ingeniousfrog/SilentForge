@@ -1,28 +1,40 @@
-import type { PresentationChapterKind, PresentationMode, PresentationTheme } from "../types.js";
+import type { Locale, PresentationChapterKind, PresentationMode, PresentationTheme } from "../types.js";
+import {
+  presentationChapterKindLabel,
+  presentationModeLabel,
+  presentationThemeLabel
+} from "../i18n/index.js";
+import { DEFAULT_LOCALE } from "../i18n/types.js";
 
-export const themeLabels: Readonly<Record<PresentationTheme, string>> = {
-  "signal-dark": "Dark Signal",
-  "editorial-light": "Editorial Light",
-  blueprint: "Blueprint"
-};
+export function themeLabels(locale: Locale = DEFAULT_LOCALE): Readonly<Record<PresentationTheme, string>> {
+  return {
+    "signal-dark": presentationThemeLabel(locale, "signal-dark"),
+    "editorial-light": presentationThemeLabel(locale, "editorial-light"),
+    blueprint: presentationThemeLabel(locale, "blueprint")
+  };
+}
 
-export const modeLabels: Readonly<Record<PresentationMode, string>> = {
-  "developer-deck": "Developer docs",
-  "architecture-map": "Architecture handoff",
-  "visual-showcase": "Visual showcase",
-  "compact-story": "Compact story"
-};
+export function modeLabels(locale: Locale = DEFAULT_LOCALE): Readonly<Record<PresentationMode, string>> {
+  return {
+    "developer-deck": presentationModeLabel(locale, "developer-deck"),
+    "architecture-map": presentationModeLabel(locale, "architecture-map"),
+    "visual-showcase": presentationModeLabel(locale, "visual-showcase"),
+    "compact-story": presentationModeLabel(locale, "compact-story")
+  };
+}
 
-export const chapterLabels: Readonly<Record<PresentationChapterKind, string>> = {
-  hero: "Hero",
-  features: "Features",
-  visuals: "Visuals",
-  usage: "Usage",
-  "readme-insights": "README insights",
-  technology: "Technology",
-  architecture: "Architecture",
-  resources: "Resources"
-};
+export function chapterLabels(locale: Locale = DEFAULT_LOCALE): Readonly<Record<PresentationChapterKind, string>> {
+  return {
+    hero: presentationChapterKindLabel(locale, "hero"),
+    features: presentationChapterKindLabel(locale, "features"),
+    visuals: presentationChapterKindLabel(locale, "visuals"),
+    usage: presentationChapterKindLabel(locale, "usage"),
+    "readme-insights": presentationChapterKindLabel(locale, "readme-insights"),
+    technology: presentationChapterKindLabel(locale, "technology"),
+    architecture: presentationChapterKindLabel(locale, "architecture"),
+    resources: presentationChapterKindLabel(locale, "resources")
+  };
+}
 
 export function designTokensCss(): string {
   return `:root {

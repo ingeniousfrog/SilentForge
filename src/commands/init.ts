@@ -6,6 +6,7 @@ import { generateStaticSite } from "../site/generator.js";
 import { parseGitHubRepoUrl } from "../github/url.js";
 
 import type { PresentationGenerationOptions } from "../types.js";
+import { resolveGenerationLocale, t } from "../i18n/index.js";
 
 export type InitOptions = {
   readonly outputDir?: string;
@@ -27,7 +28,8 @@ export async function initRepoSite(githubRepoUrl: string, options: InitOptions =
   const snapshot = await fetchRepositorySnapshot(githubRepoUrl, {
     token: options.token ?? process.env.GITHUB_TOKEN
   });
-  const model = createSiteModel(snapshot);
+  const locale = resolveGenerationLocale(options.generationOptions);
+  const model = createSiteModel(snapshot, new Date(), locale);
   const presentationPlan = await createPresentationPlan(model, {
     useAi: options.ai,
     generationOptions: options.generationOptions

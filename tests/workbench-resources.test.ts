@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createResourceView } from "../src/workbench/resources.js";
+import { evaluateRepositoryDiagnostics } from "../src/site/diagnostics.js";
 import type { RepositorySnapshot, SiteModel } from "../src/types.js";
 
 describe("createResourceView", () => {
@@ -87,9 +88,12 @@ describe("createResourceView", () => {
       }
     };
 
+    const { diagnostics: _diagnostics, ...diagnosticSource } = model;
+    const expectedScore = evaluateRepositoryDiagnostics(diagnosticSource).score;
+
     expect(createResourceView(snapshot, model).files).toEqual([{ path: "package.json", type: "blob", size: 12 }]);
     expect(createResourceView(snapshot, model).knowledgeBase.fileTypeDistribution).toEqual([{ label: ".json", count: 1 }]);
-    expect(createResourceView(snapshot, model).diagnostics.score).toBe(22);
+    expect(createResourceView(snapshot, model).diagnostics.score).toBe(expectedScore);
     expect(JSON.stringify(createResourceView(snapshot, model))).not.toContain("secret-url");
   });
 });

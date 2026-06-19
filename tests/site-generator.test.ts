@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
+import { buildPresentationPlan } from "../src/presentation/plan.js";
 import { generateStaticSite } from "../src/site/generator.js";
 import type { SiteModel } from "../src/types.js";
 
@@ -268,6 +269,21 @@ describe("generateStaticSite", () => {
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain(
       "widgetkit configure theta"
     );
+  });
+
+  it("localizes generated page chrome for zh locale", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "reposite-"));
+    tempDirs.push(outputDir);
+    const model = createModel();
+    const plan = buildPresentationPlan(model, { locale: "zh" });
+
+    await generateStaticSite(model, outputDir, { presentationPlan: plan });
+
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('lang="zh-CN"');
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain(
+      'data-chapter-index="3">从克隆到首次运行</button>'
+    );
+    await expect(readFile(join(outputDir, "details/install.html"), "utf8")).resolves.toContain("返回演示");
   });
 
   it("does not delete user-authored files in the output directory", async () => {

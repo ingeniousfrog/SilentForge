@@ -12,6 +12,10 @@ describe("workbenchHtml", () => {
     expect(html).toContain('id="repo-url"');
     expect(html).toContain('id="history-list"');
     expect(html).toContain("silentforge.recentRepositories");
+    expect(html).toContain("silentforge.locale");
+    expect(html).toContain('class="lang-switch"');
+    expect(html).toContain('data-locale="zh"');
+    expect(html).toContain("const I18N =");
     expect(html).toContain('id="status-pill"');
     expect(html).toContain('data-tab="wiki"');
     expect(html).toContain('data-tab="preview"');
@@ -46,6 +50,8 @@ describe("workbenchHtml", () => {
     expect(workbenchTemplate("styles", "script")).toContain("<style>styles</style>");
     expect(workbenchStyles()).toContain(".search-console");
     expect(workbenchStyles()).toContain("--bg:");
-    expect(workbenchClientScript()).toContain("collectGenerationOptions");
+    expect(workbenchClientScript("{}")).toContain("collectGenerationOptions");
+    expect(workbenchClientScript("{}")).toContain("applyLocale");
+    expect(workbenchClientScript("{}")).toContain("locale: state.locale");
   });
 });

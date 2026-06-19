@@ -1,4 +1,6 @@
-import type { RepositorySnapshot, SiteModel } from "../types.js";
+import type { Locale, PresentationGenerationOptions, RepositorySnapshot, SiteModel } from "../types.js";
+import { evaluateRepositoryDiagnostics } from "../site/diagnostics.js";
+import { resolveGenerationLocale } from "../i18n/index.js";
 
 export type ResourceView = {
   readonly repository: SiteModel["repository"];
@@ -19,14 +21,21 @@ export type ResourceView = {
   }[];
 };
 
-export function createResourceView(snapshot: RepositorySnapshot, model: SiteModel): ResourceView {
+export function createResourceView(
+  snapshot: RepositorySnapshot,
+  model: SiteModel,
+  generationOptions: PresentationGenerationOptions = {}
+): ResourceView {
+  const locale = resolveGenerationLocale(generationOptions);
+  const { diagnostics: _diagnostics, ...diagnosticSource } = model;
+
   return {
     repository: model.repository,
     readme: model.readme,
     releases: model.releases,
     screenshots: model.screenshots,
     knowledgeBase: model.knowledgeBase,
-    diagnostics: model.diagnostics,
+    diagnostics: evaluateRepositoryDiagnostics(diagnosticSource, locale),
     files: snapshot.files.map((file) => ({
       path: file.path,
       type: file.type,

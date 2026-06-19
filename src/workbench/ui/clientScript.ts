@@ -1,12 +1,15 @@
-export function workbenchClientScript(): string {
-  return `      const historyKey = "silentforge.recentRepositories";
+export function workbenchClientScript(i18nJson: string): string {
+  return `      const I18N = ${i18nJson};
+      const localeKey = "silentforge.locale";
+      const historyKey = "silentforge.recentRepositories";
       const legacyHistoryKey = "reposite.recentRepositories";
       const maxHistory = 6;
       const state = {
         mode: "idle",
         job: null,
         resources: null,
-        activeTab: "overview"
+        activeTab: "overview",
+        locale: "en"
       };
 
       const shell = document.querySelector(".shell");
@@ -27,6 +30,60 @@ export function workbenchClientScript(): string {
       const generationThemeEl = document.querySelector("#generation-theme");
       const chapterToggleEls = Array.from(document.querySelectorAll("[data-chapter-toggle]"));
       const tabs = Array.from(document.querySelectorAll(".tab"));
+      const langPills = Array.from(document.querySelectorAll(".lang-pill"));
+
+      function t(key, params) {
+        const catalog = I18N[state.locale] || I18N.en;
+        let text = catalog[key] || I18N.en[key] || key;
+        if (params) {
+          Object.entries(params).forEach(([name, value]) => {
+            text = text.replaceAll("{" + name + "}", String(value));
+          });
+        }
+        return text;
+      }
+
+      function applyLocale(locale) {
+        state.locale = locale === "zh" ? "zh" : "en";
+        document.documentElement.lang = state.locale === "zh" ? "zh-CN" : "en";
+        localStorage.setItem(localeKey, state.locale);
+        langPills.forEach((pill) => pill.classList.toggle("active", pill.dataset.locale === state.locale));
+        document.querySelectorAll("[data-i18n]").forEach((node) => {
+          node.textContent = t(node.getAttribute("data-i18n"));
+        });
+        document.querySelectorAll("[data-i18n-aria]").forEach((node) => {
+          node.setAttribute("aria-label", t(node.getAttribute("data-i18n-aria")));
+        });
+        document.querySelectorAll("[data-i18n-option]").forEach((node) => {
+          node.textContent = t(node.getAttribute("data-i18n-option"));
+        });
+        const titleNode = document.querySelector("title[data-i18n]");
+        if (titleNode) {
+          document.title = t(titleNode.getAttribute("data-i18n"));
+        }
+        if (state.mode === "idle") {
+          modeLabel.textContent = t("standby");
+        } else {
+          modeLabel.textContent = t("running");
+        }
+        if (shell.dataset.status === "idle") {
+          statusEl.textContent = t("statusWaiting");
+          statusPill.textContent = t("statusIdle");
+        }
+        if (state.resources) {
+          renderContent();
+        }
+      }
+
+      langPills.forEach((pill) => {
+        pill.addEventListener("click", () => applyLocale(pill.dataset.locale));
+      });
+
+      try {
+        applyLocale(localStorage.getItem(localeKey) || "en");
+      } catch {
+        applyLocale("en");
+      }
 
       renderHistory();
       renderMode("idle");
@@ -35,15 +92,15 @@ export function workbenchClientScript(): string {
         event.preventDefault();
         const repoUrl = input.value.trim();
         if (!repoUrl) {
-          renderStatus("error", "Enter a GitHub repository URL first.");
-          formHint.textContent = "A repository target is required before generation can start.";
+          renderStatus("error", t("urlRequired"));
+          formHint.textContent = t("hintRequired");
           return;
         }
 
         saveHistory(repoUrl);
         renderHistory();
         renderMode("active");
-        renderStatus("submitting", "Creating local generation job...");
+        renderStatus("submitting", t("creatingJob"));
         startButton.disabled = true;
         timelineEl.innerHTML = "";
         state.job = null;
@@ -54,19 +111,22 @@ export function workbenchClientScript(): string {
 
         const response = await fetch("/api/jobs", {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: {
+            "content-type": "application/json",
+            "x-silentforge-locale": state.locale
+          },
           body: JSON.stringify({ repoUrl: repoUrl, useAi: useAiInput.checked, generationOptions: collectGenerationOptions() })
         });
 
         if (!response.ok) {
           const error = await response.json();
-          renderStatus("error", error.error || "Could not start job.");
+          renderStatus("error", error.error || t("couldNotStart"));
           startButton.disabled = false;
           return;
         }
 
         state.job = await response.json();
-        renderStatus("running", "Generation started. Listening for repository signals...");
+        renderStatus("running", t("generationStarted"));
         connectEvents(state.job.id);
       });
 
@@ -87,7 +147,7 @@ export function workbenchClientScript(): string {
             appendEvent(payload);
 
             if (type === "complete") {
-              renderStatus("complete", "Ready. Preview and ZIP now use the same static presentation files.");
+              renderStatus("complete", t("generationComplete"));
               source.close();
               await loadResources(id);
               downloadEl.href = "/api/jobs/" + id + "/download";
@@ -96,7 +156,7 @@ export function workbenchClientScript(): string {
             }
 
             if (type === "error") {
-              renderStatus("error", "Generation failed.");
+              renderStatus("error", t("generationFailed"));
               source.close();
               startButton.disabled = false;
               renderContent();
@@ -106,7 +166,9 @@ export function workbenchClientScript(): string {
       }
 
       async function loadResources(id) {
-        const response = await fetch("/api/jobs/" + id + "/resources");
+        const response = await fetch("/api/jobs/" + id + "/resources", {
+          headers: { "x-silentforge-locale": state.locale }
+        });
         state.resources = await response.json();
         renderContent();
       }
@@ -114,7 +176,7 @@ export function workbenchClientScript(): string {
       function renderMode(mode) {
         state.mode = mode;
         shell.dataset.mode = mode === "idle" ? "idle" : "active";
-        modeLabel.textContent = mode === "idle" ? "standby" : "analysis running";
+        modeLabel.textContent = mode === "idle" ? t("standby") : t("running");
       }
 
       function renderStatus(status, message) {
@@ -122,9 +184,7 @@ export function workbenchClientScript(): string {
         statusEl.textContent = message;
         statusPill.textContent = status;
         statusPill.className = "status-pill " + (status === "complete" || status === "error" ? status : "");
-        formHint.textContent = status === "error"
-          ? "Check the repository URL and try again."
-          : "Paste a public GitHub repository URL or owner/repo shorthand.";
+        formHint.textContent = status === "error" ? t("hintError") : t("hint");
       }
 
       function appendEvent(event) {
@@ -152,11 +212,9 @@ export function workbenchClientScript(): string {
       }
 
       function renderPending() {
-        const title = state.job ? "Building repository workspace" : "No generation started";
-        const copy = state.job
-          ? "Preview and wiki panels will activate when GitHub metadata, README, releases, and file tree signals are ready."
-          : "Generate a repository to inspect source signals, wiki coverage, and the site preview.";
-        return '<div class="preview-placeholder"><p><strong>' + title + '</strong><span class="empty">' + copy + '</span></p></div>';
+        const title = state.job ? t("buildingTitle") : t("pendingTitle");
+        const copy = state.job ? t("buildingBody") : t("pendingBody");
+        return '<div class="preview-placeholder"><p><strong>' + escapeHtml(title) + '</strong><span class="empty">' + escapeHtml(copy) + '</span></p></div>';
       }
 
       function renderOverview() {
@@ -164,68 +222,68 @@ export function workbenchClientScript(): string {
         const readme = state.resources.readme;
         return renderDiagnostics(state.resources.diagnostics) +
           '<div class="metrics">' +
-          metric(repo.stars, "Stars") +
-          metric(repo.language || "not detected", "Primary language") +
-          metric(repo.topics.length, "Topics") +
-          metric(state.resources.releases.length, "Releases") +
+          metric(repo.stars, t("stars")) +
+          metric(repo.language || t("notDetected"), t("primaryLanguage")) +
+          metric(repo.topics.length, t("topics")) +
+          metric(state.resources.releases.length, t("releases")) +
           '</div>' +
           '<h2>' + escapeHtml(readme.title || repo.name) + '</h2>' +
-          '<p class="empty">' + escapeHtml(readme.summary || repo.description || "No summary was detected in the README or repository metadata.") + '</p>' +
-          '<h2>Source Signals</h2>' +
+          '<p class="empty">' + escapeHtml(readme.summary || repo.description || t("noSummary")) + '</p>' +
+          '<h2>' + escapeHtml(t("sourceSignals")) + '</h2>' +
           '<div class="signal-grid">' +
-          signal("README title", readme.title ? "detected" : "not detected", "Parsed README") +
-          signal("README summary", readme.summary ? "detected" : "not detected", "Parsed README") +
-          signal("License", repo.license ? repo.license.name : "not detected", "GitHub metadata") +
-          signal("Homepage", repo.homepage || "not detected", "GitHub metadata") +
-          signal("Screenshots", String(state.resources.screenshots.length), "README images and repository image paths") +
-          signal("Default branch", repo.defaultBranch, "GitHub metadata") +
+          signal(t("readmeTitle"), readme.title ? t("detected") : t("notDetected"), t("parsedReadme")) +
+          signal(t("readmeSummary"), readme.summary ? t("detected") : t("notDetected"), t("parsedReadme")) +
+          signal(t("license"), repo.license ? repo.license.name : t("notDetected"), t("githubMetadata")) +
+          signal(t("homepage"), repo.homepage || t("notDetected"), t("githubMetadata")) +
+          signal(t("screenshots"), String(state.resources.screenshots.length), t("screenshotsSource")) +
+          signal(t("defaultBranch"), repo.defaultBranch, t("githubMetadata")) +
           '</div>' +
-          '<h2>Extracted Features</h2>' +
-          listOrEmpty(readme.features, "No feature list was detected in README sections.") +
-          '<h2>Topics</h2>' +
-          tagList(repo.topics, "No repository topics were found in GitHub metadata.");
+          '<h2>' + escapeHtml(t("extractedFeatures")) + '</h2>' +
+          listOrEmpty(readme.features, t("noFeatures")) +
+          '<h2>' + escapeHtml(t("topics")) + '</h2>' +
+          tagList(repo.topics, t("noTopics"));
       }
 
       function renderResources() {
-        return '<h2>Configuration Files</h2>' +
+        return '<h2>' + escapeHtml(t("configFiles")) + '</h2>' +
           configCards(state.resources.knowledgeBase.configFiles) +
-          '<h2>Repository Files</h2>' +
+          '<h2>' + escapeHtml(t("repoFiles")) + '</h2>' +
           resourceCards(state.resources.files.slice(0, 120));
       }
 
       function renderWiki() {
         const wiki = state.resources.knowledgeBase;
         return '<div class="metrics">' +
-          metric(wiki.projectStructure.length, "Top-level paths") +
-          metric(wiki.techStack.length, "Detected stack") +
-          metric(wiki.entryFiles.length, "Entry files") +
-          metric(wiki.configFiles.length, "Config files") +
+          metric(wiki.projectStructure.length, t("topLevelPaths")) +
+          metric(wiki.techStack.length, t("detectedStack")) +
+          metric(wiki.entryFiles.length, t("entryFiles")) +
+          metric(wiki.configFiles.length, t("configFilesCount")) +
           '</div>' +
-          '<h2>Detection Signals</h2>' +
+          '<h2>' + escapeHtml(t("detectionSignals")) + '</h2>' +
           '<div class="signal-grid">' + wiki.detectionSignals.map((item) =>
             '<div class="signal"><strong>' + escapeHtml(item.label) + '</strong><p>' + escapeHtml(item.value) + '</p><p><span class="confidence">' + escapeHtml(item.confidence) + '</span> · ' + escapeHtml(item.source) + '</p></div>'
           ).join("") + '</div>' +
-          '<h2>Technology Stack</h2>' + tagList(wiki.techStack, "No stack markers were detected from config files or file extensions.") +
-          '<h2>Entry Files</h2>' + tagList(wiki.entryFiles, "No common entry file names were detected in the repository tree.") +
-          '<h2>File Mix</h2>' +
+          '<h2>' + escapeHtml(t("technologyStack")) + '</h2>' + tagList(wiki.techStack, t("noStack")) +
+          '<h2>' + escapeHtml(t("entryFiles")) + '</h2>' + tagList(wiki.entryFiles, t("noEntryFiles")) +
+          '<h2>' + escapeHtml(t("fileMix")) + '</h2>' +
           '<div class="resource-grid">' + wiki.fileTypeDistribution.map((item) =>
-            '<div class="resource"><strong>' + escapeHtml(item.label) + '</strong><p>' + escapeHtml(String(item.count)) + ' files</p></div>'
+            '<div class="resource"><strong>' + escapeHtml(item.label) + '</strong><p>' + escapeHtml(t("filesCount", { count: item.count })) + '</p></div>'
           ).join("") + '</div>' +
-          '<h2>Top Directories</h2>' +
+          '<h2>' + escapeHtml(t("topDirectories")) + '</h2>' +
           '<div class="resource-grid">' + wiki.directorySummaries.map((item) =>
             '<div class="resource"><strong>' + escapeHtml(item.path) + '</strong><p>' + escapeHtml(item.summary) + '</p></div>'
           ).join("") + '</div>' +
-          '<h2>Key Configuration</h2>' + configCards(wiki.configFiles) +
-          '<h2>Module Map</h2><div class="resource-grid">' +
+          '<h2>' + escapeHtml(t("keyConfiguration")) + '</h2>' + configCards(wiki.configFiles) +
+          '<h2>' + escapeHtml(t("moduleMap")) + '</h2><div class="resource-grid">' +
           wiki.moduleMap.map((item) => '<div class="resource"><strong>' + escapeHtml(item.heading) + '</strong><p>' + escapeHtml(item.content) + '</p></div>').join("") +
-          '</div><details class="mermaid-block"><summary>Mermaid source</summary><pre>' + escapeHtml(wiki.mermaid) + '</pre></details>';
+          '</div><details class="mermaid-block"><summary>' + escapeHtml(t("mermaidSource")) + '</summary><pre>' + escapeHtml(wiki.mermaid) + '</pre></details>';
       }
 
       function renderPreview() {
         if (!state.job || !state.resources) {
           return renderPending();
         }
-        return '<div class="preview-frame"><iframe title="Generated SilentForge preview" src="/preview/' + state.job.id + '/"></iframe></div>';
+        return '<div class="preview-frame"><iframe title="' + escapeAttribute(t("previewTitle")) + '" src="/preview/' + state.job.id + '/"></iframe></div>';
       }
 
       function metric(value, label) {
@@ -236,19 +294,20 @@ export function workbenchClientScript(): string {
         if (!diagnostics) {
           return "";
         }
+        const grade = t("diagnostics.grade." + diagnostics.grade);
         const percent = diagnostics.maxScore > 0 ? Math.round((diagnostics.score / diagnostics.maxScore) * 100) : 0;
         const dimensions = (diagnostics.dimensions || []).map((dimension) => {
           const dimPercent = dimension.maxScore > 0 ? Math.round((dimension.score / dimension.maxScore) * 100) : 0;
-          const note = dimension.gaps.length > 0 ? dimension.gaps[0] : (dimension.strengths[0] || "No gaps detected.");
+          const note = dimension.gaps.length > 0 ? dimension.gaps[0] : (dimension.strengths[0] || t("noGaps"));
           const noteClass = dimension.gaps.length > 0 ? "dimension-gap" : "dimension-strength";
           return '<article class="dimension-card"><div class="dimension-card-header"><strong>' + escapeHtml(dimension.label) + '</strong><span>' + escapeHtml(String(dimension.score)) + '/' + escapeHtml(String(dimension.maxScore)) + '</span></div><div class="dimension-progress"><span style="width:' + dimPercent + '%"></span></div><p class="' + noteClass + '">' + escapeHtml(note) + '</p></article>';
         }).join("");
-        return '<h2>Repository Readiness</h2>' +
-          '<div class="readiness-progress" role="progressbar" aria-valuenow="' + diagnostics.score + '" aria-valuemin="0" aria-valuemax="' + diagnostics.maxScore + '"><div class="readiness-progress-bar" style="width:' + percent + '%"></div><span class="readiness-progress-label">' + escapeHtml(String(diagnostics.score)) + '/' + escapeHtml(String(diagnostics.maxScore)) + ' · ' + escapeHtml(diagnostics.grade) + '</span></div>' +
+        return '<h2>' + escapeHtml(t("readinessTitle")) + '</h2>' +
+          '<div class="readiness-progress" role="progressbar" aria-valuenow="' + diagnostics.score + '" aria-valuemin="0" aria-valuemax="' + diagnostics.maxScore + '"><div class="readiness-progress-bar" style="width:' + percent + '%"></div><span class="readiness-progress-label">' + escapeHtml(String(diagnostics.score)) + '/' + escapeHtml(String(diagnostics.maxScore)) + ' · ' + escapeHtml(grade) + '</span></div>' +
           (dimensions ? '<div class="dimension-grid">' + dimensions + '</div>' : "") +
           '<div class="signal-grid">' +
-          signal("Top strengths", diagnostics.strengths.slice(0, 3).join(" · ") || "No strong signals yet.", "Repository diagnostics") +
-          signal("Next improvements", diagnostics.recommendations.slice(0, 3).join(" · ") || "No immediate recommendations.", "Repository diagnostics") +
+          signal(t("topStrengths"), diagnostics.strengths.slice(0, 3).join(" · ") || t("noStrengths"), t("diagnosticsSource")) +
+          signal(t("nextImprovements"), diagnostics.recommendations.slice(0, 3).join(" · ") || t("noRecommendations"), t("diagnosticsSource")) +
           '</div>';
       }
 
@@ -258,7 +317,7 @@ export function workbenchClientScript(): string {
 
       function resourceCards(items) {
         if (!items.length) {
-          return '<div class="empty-card"><p>No resources were found in the repository tree.</p></div>';
+          return '<div class="empty-card"><p>' + escapeHtml(t("noResources")) + '</p></div>';
         }
         return '<div class="resource-grid">' + items.map((item) =>
           '<div class="resource"><code>' + escapeHtml(item.path) + '</code><p>' + escapeHtml(item.type) + (item.size ? " · " + item.size + " bytes" : "") + '</p></div>'
@@ -267,7 +326,7 @@ export function workbenchClientScript(): string {
 
       function configCards(items) {
         if (!items.length) {
-          return '<div class="empty-card"><p>No known configuration files were detected from the repository tree.</p></div>';
+          return '<div class="empty-card"><p>' + escapeHtml(t("noConfigFiles")) + '</p></div>';
         }
         return '<div class="resource-grid">' + items.map((item) =>
           '<div class="resource"><code>' + escapeHtml(item.path) + '</code><p>' + escapeHtml(item.purpose) + '</p></div>'
@@ -294,6 +353,7 @@ export function workbenchClientScript(): string {
           .map((item) => item.dataset.chapterToggle)
           .filter(Boolean);
         return {
+          locale: state.locale,
           ...(mode === "auto" ? {} : { mode: mode }),
           ...(theme === "auto" ? {} : { theme: theme }),
           enabledChapters: enabledChapters

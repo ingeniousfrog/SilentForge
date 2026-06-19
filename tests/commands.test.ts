@@ -33,6 +33,7 @@ describe("initRepoSite", () => {
     createPresentationPlan.mockResolvedValue({
       mode: "compact-story",
       theme: "signal-dark",
+      locale: "zh",
       chapters: [],
       detailPages: [],
       plannedBy: "rules"
@@ -42,14 +43,14 @@ describe("initRepoSite", () => {
       cwd: "/tmp/work",
       outputDir: "site",
       token: "token",
-      generationOptions: { theme: "blueprint", enabledChapters: ["features", "usage"] }
+      generationOptions: { locale: "zh", theme: "blueprint", enabledChapters: ["features", "usage"] }
     });
 
     expect(fetchRepositorySnapshot).toHaveBeenCalledWith("acme/widgetkit", { token: "token" });
     expect(createPresentationPlan).toHaveBeenCalledWith(
       expect.objectContaining({ repository: expect.any(Object) }),
       expect.objectContaining({
-        generationOptions: { theme: "blueprint", enabledChapters: ["features", "usage"] }
+        generationOptions: { locale: "zh", theme: "blueprint", enabledChapters: ["features", "usage"] }
       })
     );
     expect(generateStaticSite).toHaveBeenCalledWith(

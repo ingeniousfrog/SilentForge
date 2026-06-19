@@ -1,4 +1,7 @@
 import { designTokensCss, presentationThemeCss } from "../shared/designTokens.js";
+import type { Locale } from "../types.js";
+import { t } from "../i18n/index.js";
+import { DEFAULT_LOCALE } from "../i18n/types.js";
 
 export function presentationCss(): string {
   return `${designTokensCss()}
@@ -329,7 +332,9 @@ body[data-theme="editorial-light"] #chapter-nav { background: rgba(255, 253, 247
 }`;
 }
 
-export function presentationBootScript(): string {
+export function presentationBootScript(locale: Locale = DEFAULT_LOCALE): string {
+  const diagramUnavailable = JSON.stringify(t(locale, "site.diagramUnavailable"));
+  const diagramRenderFailed = JSON.stringify(t(locale, "site.diagramRenderFailed"));
   return `(()=>{
   const boot=async()=>{
   const diagrams=Array.from(document.querySelectorAll(".mermaid")).map((element)=>({element,source:element.textContent||""}));
@@ -346,7 +351,7 @@ export function presentationBootScript(): string {
   const renderDiagrams=async()=>{
     if(!diagrams.length)return;
     if(!window.mermaid){
-      diagrams.forEach((diagram)=>showDiagramError(diagram,"Architecture diagram runtime is unavailable"));
+      diagrams.forEach((diagram)=>showDiagramError(diagram,${diagramUnavailable}));
       return;
     }
     try{
@@ -365,7 +370,7 @@ export function presentationBootScript(): string {
         }
       });
     }catch(error){
-      diagrams.forEach((diagram)=>showDiagramError(diagram,"Architecture diagram could not be rendered"));
+      diagrams.forEach((diagram)=>showDiagramError(diagram,${diagramRenderFailed}));
     }
   };
   requestAnimationFrame(()=>requestAnimationFrame(()=>void renderDiagrams()));

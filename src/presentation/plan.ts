@@ -1,4 +1,5 @@
 import type {
+  Locale,
   PresentationChapter,
   PresentationChapterKind,
   PresentationDetailPage,
@@ -8,6 +9,12 @@ import type {
   SiteModel
 } from "../types.js";
 import { stripInlineMarkdown } from "../shared/markdown.js";
+import {
+  localizePresentationPlan,
+  presentationChapterTitle,
+  presentationDetailTitle,
+  resolveGenerationLocale
+} from "../i18n/index.js";
 import { selectReadmeInsights } from "./readme.js";
 
 const allowedSourceRefs = new Set([
@@ -41,26 +48,31 @@ export function buildPresentationPlan(
   model: SiteModel,
   generationOptions: PresentationGenerationOptions = {}
 ): PresentationPlan {
+  const locale = resolveGenerationLocale(generationOptions);
   const mode = selectMode(model, generationOptions);
   const theme = selectTheme(mode, generationOptions);
-  const chapters = chapterCandidates(model)
+  const chapters = chapterCandidates(model, locale)
     .filter((chapter) => chapter.available)
     .filter((chapter) => isChapterEnabled(chapter.kind, generationOptions))
     .slice(0, mode === "compact-story" ? 4 : 8)
     .map(({ available: _available, ...chapter }) => chapter);
-  const details = detailPages(model, generationOptions);
+  const details = detailPages(model, generationOptions, locale);
   const detailIds = new Set(details.map((page) => page.id));
 
-  return {
-    mode,
-    theme,
-    chapters: chapters.map((chapter) => ({
-      ...chapter,
-      verticalDetails: chapter.verticalDetails.filter((id) => detailIds.has(id as PresentationDetailPage["id"]))
-    })),
-    detailPages: details,
-    plannedBy: "rules"
-  };
+  return localizePresentationPlan(
+    {
+      mode,
+      theme,
+      locale,
+      chapters: chapters.map((chapter) => ({
+        ...chapter,
+        verticalDetails: chapter.verticalDetails.filter((id) => detailIds.has(id as PresentationDetailPage["id"]))
+      })),
+      detailPages: details,
+      plannedBy: "rules"
+    },
+    locale
+  );
 }
 
 export function validatePresentationPlan(
@@ -72,11 +84,14 @@ export function validatePresentationPlan(
   const constrainedPlan = constrainPresentationPlan(plan, model, generationOptions);
   validatePresentationPlanShape(constrainedPlan, model, generationOptions);
 
-  return {
-    ...constrainedPlan,
-    chapters: constrainedPlan.chapters.map((chapter) => ({ ...chapter, sourceRefs: [...chapter.sourceRefs] })),
-    detailPages: constrainedPlan.detailPages.map((page) => ({ ...page, sourceRefs: [...page.sourceRefs] }))
-  };
+  return localizePresentationPlan(
+    {
+      ...constrainedPlan,
+      chapters: constrainedPlan.chapters.map((chapter) => ({ ...chapter, sourceRefs: [...chapter.sourceRefs] })),
+      detailPages: constrainedPlan.detailPages.map((page) => ({ ...page, sourceRefs: [...page.sourceRefs] }))
+    },
+    resolveGenerationLocale(generationOptions)
+  );
 }
 
 function validatePresentationPlanShape(
@@ -90,7 +105,7 @@ function validatePresentationPlanShape(
 
   const chapterIds = new Set<string>();
   const availableKinds = new Set(
-    chapterCandidates(model)
+    chapterCandidates(model, resolveGenerationLocale(generationOptions))
       .filter((chapter) => chapter.available)
       .map((chapter) => chapter.kind)
   );
@@ -118,7 +133,7 @@ function validatePresentationPlanShape(
     validateSourceRefs(page.sourceRefs);
   });
 
-  const availableDetails = new Set(detailPages(model, generationOptions).map((page) => page.id));
+  const availableDetails = new Set(detailPages(model, generationOptions, resolveGenerationLocale(generationOptions)).map((page) => page.id));
   if (plan.detailPages.some((page) => !availableDetails.has(page.id))) {
     throw new Error("Presentation plan references an unavailable detail page.");
   }
@@ -158,7 +173,7 @@ function selectTheme(mode: PresentationPlan["mode"], generationOptions: Presenta
 
 type Candidate = PresentationChapter & { readonly available: boolean };
 
-function chapterCandidates(model: SiteModel): readonly Candidate[] {
+function chapterCandidates(model: SiteModel, locale: Locale): readonly Candidate[] {
   const hasFeatures = model.readme.features.length > 0;
   const hasVisuals = model.screenshots.length > 0;
   const hasUsage = Boolean(model.readme.installation || model.readme.usage);
@@ -171,12 +186,12 @@ function chapterCandidates(model: SiteModel): readonly Candidate[] {
       "repository",
       "readme.summary"
     ]),
-    chapter("capabilities", "features", "What it brings", undefined, ["readme.features"], hasFeatures),
-    chapter("showcase", "visuals", "See it in motion", undefined, ["screenshots"], hasVisuals),
+    chapter("capabilities", "features", presentationChapterTitle(locale, "features") ?? "What it brings", undefined, ["readme.features"], hasFeatures),
+    chapter("showcase", "visuals", presentationChapterTitle(locale, "visuals") ?? "See it in motion", undefined, ["screenshots"], hasVisuals),
     chapter(
       "quickstart",
       "usage",
-      "From clone to first run",
+      presentationChapterTitle(locale, "usage") ?? "From clone to first run",
       undefined,
       ["readme.installation", "readme.usage"],
       hasUsage,
@@ -184,19 +199,19 @@ function chapterCandidates(model: SiteModel): readonly Candidate[] {
         (id): id is "install" | "usage" => Boolean(id)
       )
     ),
-    chapter("readme-insights", "readme-insights", "Inside the project", undefined, ["readme.sections"], hasReadmeInsights, [
+    chapter("readme-insights", "readme-insights", presentationChapterTitle(locale, "readme-insights") ?? "Inside the project", undefined, ["readme.sections"], hasReadmeInsights, [
       "readme"
     ]),
-    chapter("technology", "technology", "Built with", undefined, [
+    chapter("technology", "technology", presentationChapterTitle(locale, "technology") ?? "Built with", undefined, [
       "knowledgeBase.techStack",
       "knowledgeBase.fileTypeDistribution"
     ], hasTech),
-    chapter("architecture", "architecture", "How the repository fits together", undefined, [
+    chapter("architecture", "architecture", presentationChapterTitle(locale, "architecture") ?? "How the repository fits together", undefined, [
       "knowledgeBase.moduleMap",
       "knowledgeBase.directorySummaries",
       "knowledgeBase.entryFiles"
     ], hasArchitecture, ["architecture"]),
-    chapter("resources", "resources", "Keep exploring", undefined, [
+    chapter("resources", "resources", presentationChapterTitle(locale, "resources") ?? "Keep exploring", undefined, [
       "repository.homepage",
       "repository.topics",
       "releases",
@@ -227,19 +242,20 @@ function normalizeSummary(summary: string | undefined): string | undefined {
 
 function detailPages(
   model: SiteModel,
-  generationOptions: PresentationGenerationOptions = {}
+  generationOptions: PresentationGenerationOptions = {},
+  locale: Locale = resolveGenerationLocale(generationOptions)
 ): readonly PresentationDetailPage[] {
   return [
-    detail("install", "Installation", ["readme.installation"], Boolean(model.readme.installation)),
-    detail("usage", "Usage", ["readme.usage"], Boolean(model.readme.usage)),
+    detail("install", presentationDetailTitle(locale, "install"), ["readme.installation"], Boolean(model.readme.installation)),
+    detail("usage", presentationDetailTitle(locale, "usage"), ["readme.usage"], Boolean(model.readme.usage)),
     detail(
       "architecture",
-      "Architecture",
+      presentationDetailTitle(locale, "architecture"),
       ["knowledgeBase.moduleMap", "knowledgeBase.directorySummaries", "knowledgeBase.mermaid"],
       hasArchitectureContent(model)
     ),
-    detail("releases", "Releases", ["releases"], model.releases.length > 0),
-    detail("readme", "README sections", ["readme.sections"], model.readme.sections.length > 0)
+    detail("releases", presentationDetailTitle(locale, "releases"), ["releases"], model.releases.length > 0),
+    detail("readme", presentationDetailTitle(locale, "readme"), ["readme.sections"], model.readme.sections.length > 0)
   ]
     .filter((page): page is PresentationDetailPage => Boolean(page))
     .filter((page) => isDetailEnabled(page.id, generationOptions));
@@ -250,9 +266,10 @@ function constrainPresentationPlan(
   model: SiteModel,
   generationOptions: PresentationGenerationOptions
 ): PresentationPlan {
+  const locale = resolveGenerationLocale(generationOptions);
   const mode = selectMode(model, generationOptions);
   const theme = selectTheme(mode, generationOptions);
-  const detailIds = new Set(detailPages(model, generationOptions).map((page) => page.id));
+  const detailIds = new Set(detailPages(model, generationOptions, locale).map((page) => page.id));
   const chapters = plan.chapters
     .filter((chapter) => isChapterEnabled(chapter.kind, generationOptions))
     .map((chapter) => ({
@@ -260,13 +277,17 @@ function constrainPresentationPlan(
       verticalDetails: chapter.verticalDetails.filter((id) => detailIds.has(id as PresentationDetailPage["id"]))
     }));
 
-  return {
-    ...plan,
-    mode,
-    theme,
-    chapters,
-    detailPages: plan.detailPages.filter((page) => detailIds.has(page.id))
-  };
+  return localizePresentationPlan(
+    {
+      ...plan,
+      mode,
+      theme,
+      locale,
+      chapters,
+      detailPages: plan.detailPages.filter((page) => detailIds.has(page.id))
+    },
+    locale
+  );
 }
 
 function isChapterEnabled(

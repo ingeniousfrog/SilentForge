@@ -5,20 +5,22 @@ import {
   summarizeMarkdown
 } from "../presentation/readme.js";
 import { renderInlineMarkdown, stripInlineMarkdown } from "../shared/markdown.js";
+import { htmlLang, t } from "../i18n/index.js";
 import { escapeHtml, safeExternalUrl } from "./security.js";
 
 export function renderDetailPage(model: SiteModel, plan: PresentationPlan, page: PresentationDetailPage): string {
-  const content = detailContent(model, page.id);
+  const locale = plan.locale;
+  const content = detailContent(model, page.id, locale);
   return document(
     model,
     plan,
-    `<a class="back" href="../index.html">← Presentation</a><main class="detail-shell"><p class="kicker">${escapeHtml(
+    `<a class="back" href="../index.html">${escapeHtml(t(locale, "site.backToPresentation"))}</a><main class="detail-shell"><p class="kicker">${escapeHtml(
       model.repository.fullName
     )}</p><h1>${escapeHtml(page.title)}</h1>${content}</main>`
   );
 }
 
-function detailContent(model: SiteModel, id: PresentationDetailPage["id"]): string {
+function detailContent(model: SiteModel, id: PresentationDetailPage["id"], locale: PresentationPlan["locale"]): string {
   if (id === "install") return codeBlock(model.readme.installation);
   if (id === "usage") return codeBlock(model.readme.usage);
   if (id === "releases") {
@@ -44,16 +46,21 @@ function detailContent(model: SiteModel, id: PresentationDetailPage["id"]): stri
       })
       .join("");
   }
-  return `<h2>Top-level structure</h2>${list(model.knowledgeBase.projectStructure)}
-    <h2>Entry files</h2>${list(model.knowledgeBase.entryFiles)}
-    <h2>Repository map</h2><div class="mermaid">${escapeHtml(model.knowledgeBase.mermaid)}</div>
-    <h2>Modules</h2><div class="card-grid">${model.knowledgeBase.moduleMap
-      .map((module) => `<article class="card"><strong>${escapeHtml(module.heading)}</strong><p>${escapeHtml(module.content)}</p></article>`)
-      .join("")}</div><details><summary>Mermaid source</summary>${codeBlock(model.knowledgeBase.mermaid)}</details>`;
+  return `<h2>${escapeHtml(t(locale, "site.topLevelStructure"))}</h2>${list(model.knowledgeBase.projectStructure)}
+    <h2>${escapeHtml(t(locale, "site.entryFiles"))}</h2>${list(model.knowledgeBase.entryFiles)}
+    <h2>${escapeHtml(t(locale, "site.repositoryMap"))}</h2><div class="mermaid">${escapeHtml(model.knowledgeBase.mermaid)}</div>
+    <h2>${escapeHtml(t(locale, "site.modules"))}</h2><div class="card-grid">${model.knowledgeBase.moduleMap
+      .map(
+        (module) =>
+          `<article class="card"><strong>${escapeHtml(module.heading)}</strong><p>${escapeHtml(module.content)}</p></article>`
+      )
+      .join("")}</div><details><summary>${escapeHtml(t(locale, "site.mermaidSource"))}</summary>${codeBlock(
+    model.knowledgeBase.mermaid
+  )}</details>`;
 }
 
 function document(model: SiteModel, plan: PresentationPlan, body: string): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escapeHtml(
+  return `<!doctype html><html lang="${htmlLang(plan.locale)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escapeHtml(
     stripInlineMarkdown(model.readme.summary ?? model.repository.description ?? model.repository.fullName)
   )}"><title>${escapeHtml(model.repository.name)}</title><link rel="stylesheet" href="../assets/site.css"></head><body data-theme="${escapeHtml(
     plan.theme

@@ -164,9 +164,12 @@ export type PresentationDetailPage = {
   readonly sourceRefs: readonly string[];
 };
 
+export type Locale = "en" | "zh";
+
 export type PresentationPlan = {
   readonly mode: PresentationMode;
   readonly theme: PresentationTheme;
+  readonly locale: Locale;
   readonly chapters: readonly PresentationChapter[];
   readonly detailPages: readonly PresentationDetailPage[];
   readonly plannedBy: "rules" | "openai";
@@ -176,6 +179,7 @@ export type PresentationGenerationOptions = {
   readonly mode?: PresentationMode | "auto";
   readonly theme?: PresentationTheme | "auto";
   readonly enabledChapters?: readonly PresentationChapterKind[];
+  readonly locale?: Locale;
 };
 
 export type ProjectProfile = {

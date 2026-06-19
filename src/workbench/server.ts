@@ -5,6 +5,7 @@ import { extname, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { z } from "zod";
 import { parseGitHubRepoUrl } from "../github/url.js";
+import { resolveLocale, t } from "../i18n/index.js";
 import { createZipFromDirectory } from "./archive.js";
 import { runGenerationJob } from "./generator.js";
 import { JobStore, toPublicJob } from "./jobStore.js";
@@ -32,7 +33,8 @@ const createJobSchema = z.object({
         .array(
           z.enum(["features", "visuals", "usage", "readme-insights", "technology", "architecture", "resources"])
         )
-        .optional()
+        .optional(),
+      locale: z.enum(["en", "zh"]).optional()
     })
     .optional()
 });
@@ -43,8 +45,9 @@ export async function startWorkbenchServer(options: WorkbenchServerOptions = {})
   const store = new JobStore();
   const server = createServer((request, response) => {
     handleRequest(store, request, response).catch((error) => {
+      const locale = resolveRequestLocale(request);
       writeJson(response, 500, {
-        error: error instanceof Error ? error.message : "Unknown server error"
+        error: error instanceof Error ? error.message : t(locale, "server.unknownError")
       });
     });
   });
@@ -68,6 +71,7 @@ export async function startWorkbenchServer(options: WorkbenchServerOptions = {})
 
 async function handleRequest(store: JobStore, request: IncomingMessage, response: ServerResponse): Promise<void> {
   const url = new URL(request.url ?? "/", "http://localhost");
+  const locale = resolveRequestLocale(request);
 
   if (request.method === "GET" && url.pathname === "/") {
     writeHtml(response, workbenchHtml());
@@ -77,13 +81,13 @@ async function handleRequest(store: JobStore, request: IncomingMessage, response
   if (request.method === "POST" && url.pathname === "/api/jobs") {
     const parsedPayload = createJobSchema.safeParse(await readJsonBody(request));
     if (!parsedPayload.success) {
-      writeJson(response, 400, { error: "A valid GitHub repository URL and optional AI flag are required." });
+      writeJson(response, 400, { error: t(locale, "server.invalidPayload") });
       return;
     }
     try {
       parseGitHubRepoUrl(parsedPayload.data.repoUrl);
     } catch {
-      writeJson(response, 400, { error: "Enter a public github.com owner/repository URL or owner/repository shorthand." });
+      writeJson(response, 400, { error: t(locale, "server.invalidRepoUrl") });
       return;
     }
 
@@ -103,7 +107,7 @@ async function handleRequest(store: JobStore, request: IncomingMessage, response
   if (request.method === "GET" && jobMatch) {
     const job = store.publicJob(jobMatch[1]);
     if (!job) {
-      writeJson(response, 404, { error: "Job not found." });
+      writeJson(response, 404, { error: t(locale, "server.jobNotFound") });
       return;
     }
     writeJson(response, 200, job);
@@ -112,7 +116,7 @@ async function handleRequest(store: JobStore, request: IncomingMessage, response
 
   const eventsMatch = url.pathname.match(/^\/api\/jobs\/([^/]+)\/events$/);
   if (request.method === "GET" && eventsMatch) {
-    await writeEventStream(store, eventsMatch[1], response);
+    await writeEventStream(store, eventsMatch[1], response, locale);
     return;
   }
 
@@ -120,10 +124,10 @@ async function handleRequest(store: JobStore, request: IncomingMessage, response
   if (request.method === "GET" && resourcesMatch) {
     const job = store.get(resourcesMatch[1]);
     if (!job?.snapshot || !job.model) {
-      writeJson(response, 404, { error: "Resources are not ready." });
+      writeJson(response, 404, { error: t(locale, "server.resourcesNotReady") });
       return;
     }
-    writeJson(response, 200, createResourceView(job.snapshot, job.model));
+    writeJson(response, 200, createResourceView(job.snapshot, job.model, job.generationOptions));
     return;
   }
 
@@ -131,7 +135,7 @@ async function handleRequest(store: JobStore, request: IncomingMessage, response
   if (request.method === "GET" && downloadMatch) {
     const job = store.get(downloadMatch[1]);
     if (!job || job.status !== "complete") {
-      writeJson(response, 404, { error: "Generated site is not ready." });
+      writeJson(response, 404, { error: t(locale, "server.siteNotReady") });
       return;
     }
     const archive = await createZipFromDirectory(job.outputDir);
@@ -146,17 +150,17 @@ async function handleRequest(store: JobStore, request: IncomingMessage, response
 
   const previewMatch = url.pathname.match(/^\/preview\/([^/]+)(\/.*)?$/);
   if (request.method === "GET" && previewMatch) {
-    await servePreview(store, previewMatch[1], previewMatch[2] ?? "/", response);
+    await servePreview(store, previewMatch[1], previewMatch[2] ?? "/", response, locale);
     return;
   }
 
-  writeJson(response, 404, { error: "Not found." });
+  writeJson(response, 404, { error: t(locale, "server.notFound") });
 }
 
-async function writeEventStream(store: JobStore, id: string, response: ServerResponse): Promise<void> {
+async function writeEventStream(store: JobStore, id: string, response: ServerResponse, locale = resolveLocale()): Promise<void> {
   const job = store.get(id);
   if (!job) {
-    writeJson(response, 404, { error: "Job not found." });
+    writeJson(response, 404, { error: t(locale, "server.jobNotFound") });
     return;
   }
 
@@ -204,22 +208,23 @@ async function servePreview(
   store: JobStore,
   id: string,
   previewPath: string,
-  response: ServerResponse
+  response: ServerResponse,
+  locale = resolveLocale()
 ): Promise<void> {
   const job = store.get(id);
   if (!job || job.status !== "complete") {
-    writeJson(response, 404, { error: "Preview is not ready." });
+    writeJson(response, 404, { error: t(locale, "server.previewNotReady") });
     return;
   }
 
   const filePath = resolvePreviewPath(job.outputDir, previewPath);
   if (!filePath) {
-    writeJson(response, 400, { error: "Invalid preview path." });
+    writeJson(response, 400, { error: t(locale, "server.invalidPreviewPath") });
     return;
   }
   const fileStat = await stat(filePath).catch(() => undefined);
   if (!fileStat?.isFile()) {
-    writeJson(response, 404, { error: "Preview file not found." });
+    writeJson(response, 404, { error: t(locale, "server.previewFileNotFound") });
     return;
   }
 
@@ -272,6 +277,20 @@ async function readJsonBody(request: IncomingMessage): Promise<Record<string, un
   } catch {
     return {};
   }
+}
+
+function resolveRequestLocale(request: IncomingMessage): ReturnType<typeof resolveLocale> {
+  const header = request.headers["x-silentforge-locale"];
+  const value = Array.isArray(header) ? header[0] : header;
+  if (value) {
+    return resolveLocale(value);
+  }
+  const acceptLanguage = request.headers["accept-language"];
+  const language = Array.isArray(acceptLanguage) ? acceptLanguage[0] : acceptLanguage;
+  if (language?.toLowerCase().startsWith("zh")) {
+    return "zh";
+  }
+  return resolveLocale();
 }
 
 function writeHtml(response: ServerResponse, html: string): void {

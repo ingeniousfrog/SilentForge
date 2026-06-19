@@ -229,6 +229,14 @@ describe("buildPresentationPlan", () => {
     expect(plan.detailPages.map((page) => page.id)).toEqual(["architecture"]);
   });
 
+  it("localizes chapter titles when locale is zh", () => {
+    const plan = buildPresentationPlan(model(), { locale: "zh" });
+
+    expect(plan.locale).toBe("zh");
+    expect(plan.chapters.find((chapter) => chapter.kind === "features")?.title).toBe("核心能力");
+    expect(plan.detailPages.find((page) => page.id === "install")?.title).toBe("安装");
+  });
+
   it("keeps the hero chapter when all optional chapters are disabled", () => {
     const plan = buildPresentationPlan(model(), {
       enabledChapters: []

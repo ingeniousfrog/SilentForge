@@ -1,12 +1,17 @@
-import type { ReadmeImage, RepositorySnapshot, SiteModel } from "../types.js";
+import type { Locale, ReadmeImage, RepositorySnapshot, SiteModel } from "../types.js";
 import { analyzeCodebase } from "../analyzer/codebase.js";
 import { parseReadme } from "../readme/parser.js";
 import { selectReadmeInsights } from "../presentation/readme.js";
 import { evaluateRepositoryDiagnostics } from "./diagnostics.js";
+import { DEFAULT_LOCALE } from "../i18n/types.js";
 
 const screenshotPathPattern = /(^|\/)(screenshots?|images?|assets?)\/.*\.(png|jpe?g|gif|webp)$/i;
 
-export function createSiteModel(snapshot: RepositorySnapshot, generatedAt = new Date()): SiteModel {
+export function createSiteModel(
+  snapshot: RepositorySnapshot,
+  generatedAt = new Date(),
+  locale: Locale = DEFAULT_LOCALE
+): SiteModel {
   const parsedReadme = parseReadme(snapshot.readme);
   const readme = {
     ...parsedReadme,
@@ -38,7 +43,7 @@ export function createSiteModel(snapshot: RepositorySnapshot, generatedAt = new 
 
   return {
     ...model,
-    diagnostics: evaluateRepositoryDiagnostics(model)
+    diagnostics: evaluateRepositoryDiagnostics(model, locale)
   };
 }
 

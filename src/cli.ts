@@ -2,12 +2,14 @@
 import { pathToFileURL } from "node:url";
 import { Command } from "commander";
 import { initRepoSite } from "./commands/init.js";
+import { resolveLocale, t } from "./i18n/index.js";
 import { logger } from "./logger.js";
 import { startWorkbenchServer } from "./workbench/server.js";
-import type { PresentationChapterKind, PresentationMode, PresentationTheme } from "./types.js";
+import type { Locale, PresentationChapterKind, PresentationMode, PresentationTheme } from "./types.js";
 
 const presentationModes = ["auto", "visual-showcase", "developer-deck", "architecture-map", "compact-story"] as const;
 const presentationThemes = ["auto", "signal-dark", "editorial-light", "blueprint"] as const;
+const locales = ["en", "zh"] as const satisfies readonly Locale[];
 const chapterKinds = [
   "features",
   "visuals",
@@ -48,6 +50,7 @@ export function createCli(): Command {
     .option("--mode <mode>", `Presentation mode (${presentationModes.join(", ")})`)
     .option("--theme <theme>", `Presentation theme (${presentationThemes.join(", ")})`)
     .option("--chapters <kinds>", `Comma-separated chapter kinds (${chapterKinds.join(", ")})`)
+    .option("--locale <locale>", `Presentation locale (${locales.join(", ")})`, "en")
     .option("--token <token>", "GitHub token (falls back to GITHUB_TOKEN)")
     .action(
       async (
@@ -58,9 +61,14 @@ export function createCli(): Command {
           readonly mode?: string;
           readonly theme?: string;
           readonly chapters?: string;
+          readonly locale?: string;
           readonly token?: string;
         }
       ) => {
+        const locale = resolveLocale(options.locale);
+        if (options.locale && !locales.includes(options.locale as (typeof locales)[number])) {
+          throw new Error(t(locale, "cli.invalidLocale", { locale: options.locale }));
+        }
         if (options.mode && !presentationModes.includes(options.mode as (typeof presentationModes)[number])) {
           throw new Error(`Unknown mode "${options.mode}". Allowed: ${presentationModes.join(", ")}`);
         }
@@ -69,6 +77,7 @@ export function createCli(): Command {
         }
 
         const generationOptions = {
+          locale,
           ...(options.mode ? { mode: options.mode as PresentationMode | "auto" } : {}),
           ...(options.theme ? { theme: options.theme as PresentationTheme | "auto" } : {}),
           ...(options.chapters ? { enabledChapters: parseChapterKinds(options.chapters) } : {})
@@ -78,11 +87,11 @@ export function createCli(): Command {
           outputDir: options.output,
           ai: options.ai,
           token: options.token,
-          generationOptions: Object.keys(generationOptions).length > 0 ? generationOptions : undefined
+          generationOptions
         });
-        logger.info(`Generated SilentForge site for ${result.fullName}`);
-        logger.info(`Output: ${result.outputDir}`);
-        logger.info("Next: open index.html or deploy the directory to any static host.");
+        logger.info(t(locale, "cli.generated", { fullName: result.fullName }));
+        logger.info(t(locale, "cli.output", { outputDir: result.outputDir }));
+        logger.info(t(locale, "cli.nextStep"));
       }
     );
 
@@ -97,8 +106,8 @@ export function createCli(): Command {
         throw new Error("Port must be a number.");
       }
       const server = await startWorkbenchServer({ host: options.host, port });
-      logger.info(`SilentForge workbench: ${server.url}`);
-      logger.info("Press Ctrl-C to stop.");
+      logger.info(t("en", "cli.workbenchUrl", { url: server.url }));
+      logger.info(t("en", "cli.stopHint"));
     });
 
   return program;
