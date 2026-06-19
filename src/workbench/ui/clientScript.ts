@@ -782,6 +782,7 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
           '<li>' + escapeHtml(t("deployPagesStep5")) + '</li>' +
           '<li>' + escapeHtml(t("deployPagesStep6")) + ' <a href="' + escapeAttribute(pagesUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(pagesUrl) + '</a></li>' +
           '</ol>' +
+          '<p class="deploy-hint">' + escapeHtml(t("deployPages404Hint")) + '</p>' +
           '<div class="deploy-meta">' +
           '<p><span class="deploy-meta-label">' + escapeHtml(t("deployWorkflowPathLabel")) + '</span> <code class="deploy-path">' + escapeHtml(PAGES_WORKFLOW_PATH) + '</code></p>' +
           '<p><span class="deploy-meta-label">' + escapeHtml(t("deployExpectedUrl")) + '</span> <code>' + escapeHtml(pagesUrl) + '</code></p>' +

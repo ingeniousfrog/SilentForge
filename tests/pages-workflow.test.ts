@@ -10,6 +10,7 @@ describe("pagesWorkflow", () => {
     const yaml = buildPagesWorkflowYaml("antirez/ds4");
 
     expect(yaml).toContain("npx silentforge@latest init antirez/ds4 -o site --locale en");
+    expect(yaml).toContain("actions/configure-pages@v5");
     expect(yaml).toContain("actions/deploy-pages@v4");
     expect(pagesWorkflowPath).toBe(".github/workflows/silentforge-pages.yml");
   });

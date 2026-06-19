@@ -1,3 +1,9 @@
+# Before the first successful deploy, enable GitHub Pages for this repository:
+# Settings → Pages → Build and deployment → Source: GitHub Actions
+# https://github.com/ingeniousfrog/SilentForge/settings/pages
+#
+# If deploy fails with "Failed to create deployment (status: 404)", Pages is not enabled yet.
+
 name: Deploy SilentForge presentation site
 
 on:
@@ -32,6 +38,9 @@ jobs:
 
       - name: Build SilentForge CLI
         run: npm run build
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
 
       - name: Generate presentation site
         env:

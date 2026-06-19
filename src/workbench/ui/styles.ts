@@ -780,6 +780,16 @@ ${workbenchShellCss()}
       .deploy-steps a {
         color: var(--cyan);
       }
+      .deploy-hint {
+        margin: 0 0 12px;
+        padding: 10px 12px;
+        border: 1px solid color-mix(in srgb, var(--cyan) 35%, var(--line));
+        border-radius: var(--radius-sm);
+        background: color-mix(in srgb, var(--cyan) 8%, var(--bg));
+        color: var(--muted);
+        font-size: 0.8125rem;
+        line-height: 1.5;
+      }
       .deploy-meta {
         display: grid;
         gap: 8px;
