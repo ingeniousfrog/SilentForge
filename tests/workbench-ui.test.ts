@@ -13,7 +13,10 @@ describe("workbenchHtml", () => {
     expect(html).toContain('id="history-list"');
     expect(html).toContain("silentforge.recentRepositories");
     expect(html).toContain("silentforge.locale");
+    expect(html).toContain("silentforge.uiTheme");
     expect(html).toContain('class="lang-switch"');
+    expect(html).toContain('class="theme-switch"');
+    expect(html).toContain('data-ui-theme="dark"');
     expect(html).toContain('data-locale="zh"');
     expect(html).toContain("const I18N =");
     expect(html).toContain('id="status-pill"');
@@ -54,6 +57,8 @@ describe("workbenchHtml", () => {
     expect(workbenchStyles()).toContain("--bg:");
     expect(workbenchClientScript("{}")).toContain("collectGenerationOptions");
     expect(workbenchClientScript("{}")).toContain("applyLocale");
+    expect(workbenchClientScript("{}")).toContain("applyTheme");
+    expect(workbenchClientScript("{}")).toContain("prefers-color-scheme");
     expect(workbenchClientScript("{}")).toContain("resetToHome");
     expect(workbenchClientScript("{}")).toContain("back-home-button");
     expect(workbenchHtml()).toContain('id="back-home-button"');

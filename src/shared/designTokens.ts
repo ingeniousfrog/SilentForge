@@ -71,12 +71,67 @@ export function designTokensCss(): string {
 
 export function workbenchShellCss(): string {
   return `body {
+  --bg: #121212;
+  --ink: #ececec;
+  --text: #ececec;
+  --muted: #9a9a9a;
+  --dim: #666666;
+  --accent: #20b8cd;
+  --cyan: #20b8cd;
+  --mint: #34d399;
+  --panel: rgba(255, 255, 255, 0.04);
+  --panel-strong: rgba(255, 255, 255, 0.07);
+  --surface: rgba(255, 255, 255, 0.05);
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --shadow: rgba(0, 0, 0, 0.4);
+  --on-accent: #0a1214;
+  --tooltip-bg: rgba(24, 24, 24, 0.96);
+  --code-bg: rgba(0, 0, 0, 0.35);
+  --code-text: #e0e0e0;
+  --preview-bg: #121212;
+  --focus-ring: rgba(32, 184, 205, 0.12);
+  --focus-border: rgba(32, 184, 205, 0.45);
+  --chip-active-bg: rgba(32, 184, 205, 0.06);
+  --chip-active-border: rgba(32, 184, 205, 0.35);
+  --radius-pill: 999px;
   margin: 0;
   min-height: 100vh;
-  background: linear-gradient(180deg, #0a0e14 0%, #0d1520 100%);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(32, 184, 205, 0.08), transparent),
+    linear-gradient(180deg, #121212 0%, #181818 100%);
   color: var(--text);
   font-family: var(--sans);
   line-height: 1.5;
+}
+html[data-ui-theme="light"] body {
+  --bg: #f7f7f5;
+  --ink: #1a1a1a;
+  --text: #1a1a1a;
+  --muted: #5c5c5c;
+  --dim: #8a8a8a;
+  --accent: #0d9488;
+  --cyan: #0d9488;
+  --mint: #059669;
+  --panel: rgba(255, 255, 255, 0.88);
+  --panel-strong: rgba(255, 255, 255, 0.96);
+  --surface: rgba(0, 0, 0, 0.03);
+  --line: rgba(0, 0, 0, 0.08);
+  --line-strong: rgba(0, 0, 0, 0.14);
+  --shadow: rgba(0, 0, 0, 0.08);
+  --on-accent: #ffffff;
+  --tooltip-bg: rgba(255, 255, 255, 0.98);
+  --code-bg: rgba(0, 0, 0, 0.04);
+  --code-text: #1a1a1a;
+  --preview-bg: #ffffff;
+  --focus-ring: rgba(13, 148, 136, 0.14);
+  --focus-border: rgba(13, 148, 136, 0.45);
+  --chip-active-bg: rgba(13, 148, 136, 0.08);
+  --chip-active-border: rgba(13, 148, 136, 0.35);
+  color-scheme: light;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(13, 148, 136, 0.06), transparent),
+    linear-gradient(180deg, #f7f7f5 0%, #efefec 100%);
 }`;
 }
 

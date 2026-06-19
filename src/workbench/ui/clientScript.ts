@@ -1,6 +1,7 @@
 export function workbenchClientScript(i18nJson: string): string {
   return `      const I18N = ${i18nJson};
       const localeKey = "silentforge.locale";
+      const uiThemeKey = "silentforge.uiTheme";
       const outputSettingsKey = "silentforge.outputSettingsOpen";
       const historyKey = "silentforge.recentRepositories";
       const legacyHistoryKey = "reposite.recentRepositories";
@@ -33,6 +34,7 @@ export function workbenchClientScript(i18nJson: string): string {
       const chapterToggleEls = Array.from(document.querySelectorAll("[data-chapter-toggle]"));
       const tabs = Array.from(document.querySelectorAll(".tab"));
       const langPills = Array.from(document.querySelectorAll(".lang-pill"));
+      const themePills = Array.from(document.querySelectorAll(".theme-pill"));
       const outputSettingsEl = document.querySelector("#output-settings");
 
       function bindOutputSettings() {
@@ -71,6 +73,39 @@ export function workbenchClientScript(i18nJson: string): string {
         return text;
       }
 
+      function storedUiTheme() {
+        try {
+          const stored = localStorage.getItem(uiThemeKey);
+          if (stored === "light" || stored === "dark") {
+            return stored;
+          }
+        } catch {
+          // Ignore storage failures.
+        }
+        return null;
+      }
+
+      function systemUiTheme() {
+        return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      }
+
+      function applyTheme(theme, persist) {
+        const uiTheme = theme === "light" || theme === "dark" ? theme : systemUiTheme();
+        document.documentElement.dataset.uiTheme = uiTheme;
+        if (persist) {
+          try {
+            localStorage.setItem(uiThemeKey, uiTheme);
+          } catch {
+            // Ignore storage failures.
+          }
+        }
+        themePills.forEach((pill) => pill.classList.toggle("active", pill.dataset.uiTheme === uiTheme));
+      }
+
+      function syncUiTheme(persist) {
+        applyTheme(storedUiTheme(), persist);
+      }
+
       function applyLocale(locale) {
         state.locale = locale === "zh" ? "zh" : "en";
         document.documentElement.lang = state.locale === "zh" ? "zh-CN" : "en";
@@ -105,6 +140,17 @@ export function workbenchClientScript(i18nJson: string): string {
 
       langPills.forEach((pill) => {
         pill.addEventListener("click", () => applyLocale(pill.dataset.locale));
+      });
+
+      themePills.forEach((pill) => {
+        pill.addEventListener("click", () => applyTheme(pill.dataset.uiTheme, true));
+      });
+
+      syncUiTheme(false);
+      window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
+        if (!storedUiTheme()) {
+          syncUiTheme(false);
+        }
       });
 
       try {

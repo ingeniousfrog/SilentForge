@@ -1,35 +1,53 @@
 export function workbenchTemplate(styles: string, clientScript: string): string {
   return `<!doctype html>
-<html lang="en">
+<html lang="en" data-ui-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title data-i18n="pageTitle">SilentForge Workbench</title>
+    <script>
+      try {
+        var uiTheme = localStorage.getItem("silentforge.uiTheme");
+        if (uiTheme === "light" || uiTheme === "dark") {
+          document.documentElement.dataset.uiTheme = uiTheme;
+        } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+          document.documentElement.dataset.uiTheme = "light";
+        } else {
+          document.documentElement.dataset.uiTheme = "dark";
+        }
+      } catch (e) {}
+    </script>
     <style>${styles}</style>
   </head>
   <body>
     <div class="shell" data-mode="idle" data-status="idle">
+      <header class="page-header">
+        <div class="brand-row">
+          <div class="eyebrow" data-i18n="eyebrow">SilentForge Workbench</div>
+          <div class="brand-actions">
+            <div class="theme-switch" role="group" aria-label="Appearance" data-i18n-aria="themeUiAria">
+              <button type="button" class="theme-pill active" data-ui-theme="dark" data-i18n="themeDark">Dark</button>
+              <button type="button" class="theme-pill" data-ui-theme="light" data-i18n="themeLight">Light</button>
+            </div>
+            <div class="lang-switch" role="group" aria-label="Language" data-i18n-aria="langAria">
+              <button type="button" class="lang-pill active" data-locale="en">EN</button>
+              <button type="button" class="lang-pill" data-locale="zh">中文</button>
+            </div>
+            <div class="beacon" id="mode-label" data-i18n="standby">standby</div>
+          </div>
+        </div>
+      </header>
       <section class="hero">
         <div class="search-console">
-          <div class="brand-row">
-            <div>
-              <div class="eyebrow" data-i18n="eyebrow">SilentForge Workbench</div>
-              <h1 data-i18n="heroTitle">Turn a GitHub repository into a static presentation site.</h1>
-            </div>
-            <div class="brand-actions">
-              <div class="lang-switch" role="group" aria-label="Language" data-i18n-aria="langAria">
-                <button type="button" class="lang-pill active" data-locale="en">EN</button>
-                <button type="button" class="lang-pill" data-locale="zh">中文</button>
-              </div>
-              <div class="beacon" id="mode-label" data-i18n="standby">standby</div>
-            </div>
-          </div>
+          <h1 data-i18n="heroTitle">Turn a GitHub repository into a static presentation site.</h1>
           <form id="repo-form" class="repo-form">
-            <div class="search-row">
-              <label class="search-field">
-                <input id="repo-url" name="repoUrl" placeholder="https://github.com/openai/openai-node" autocomplete="off" />
-              </label>
-              <button id="start-button" class="primary-button" type="submit" data-i18n="generate">Generate</button>
+            <div class="search-pill">
+              <div class="search-row">
+                <label class="search-field">
+                  <input id="repo-url" name="repoUrl" placeholder="https://github.com/openai/openai-node" autocomplete="off" />
+                </label>
+                <button id="start-button" class="primary-button" type="submit" data-i18n="generate">Generate</button>
+              </div>
             </div>
             <p class="hint" id="form-hint" data-i18n="hint">Paste a public GitHub repository URL or owner/repo shorthand.</p>
             <label class="ai-option">
