@@ -189,6 +189,82 @@ ${workbenchShellCss()}
         font-size: 0.8125rem;
         text-align: center;
       }
+      .github-auth {
+        border: 0;
+        border-radius: var(--radius-md);
+        background: transparent;
+      }
+      .github-auth > summary {
+        list-style: none;
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 0.8125rem;
+        font-weight: 500;
+      }
+      .github-auth > summary::-webkit-details-marker {
+        display: none;
+      }
+      .github-auth-summary {
+        position: relative;
+        padding-right: 18px;
+      }
+      .github-auth-summary::after {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        color: var(--dim);
+        font-size: 0.875rem;
+        transform: translateY(-50%);
+        content: "›";
+        transition: transform 160ms ease;
+      }
+      .github-auth[open] > .github-auth-summary::after {
+        transform: translateY(-50%) rotate(90deg);
+      }
+      .github-auth-body {
+        display: grid;
+        gap: 10px;
+        padding-top: 10px;
+      }
+      .github-token-field {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 0.8125rem;
+      }
+      .github-token-field input {
+        min-height: 40px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        padding: 10px 12px;
+        background: var(--surface);
+        font-family: var(--mono);
+        font-size: 0.8125rem;
+      }
+      .github-token-field input:focus {
+        border-color: var(--focus-border);
+        box-shadow: 0 0 0 3px var(--focus-ring);
+      }
+      .remember-token {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 0.8125rem;
+      }
+      .remember-token input {
+        width: 14px;
+        min-height: 14px;
+        margin: 0;
+        padding: 0;
+        accent-color: var(--cyan);
+      }
+      .token-hint {
+        margin: 0;
+        color: var(--dim);
+        font-size: 0.75rem;
+        line-height: 1.5;
+      }
       .ai-option {
         display: flex;
         gap: 10px;
@@ -504,6 +580,7 @@ ${workbenchShellCss()}
       }
       .shell[data-mode="active"] .history,
       .shell[data-mode="active"] .output-settings,
+      .shell[data-mode="active"] .github-auth,
       .shell[data-mode="active"] .ai-option,
       .shell[data-mode="active"] .hint {
         display: none;

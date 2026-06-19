@@ -222,6 +222,12 @@ const en: MessageTree = {
     hint: "Paste a public GitHub repository URL or owner/repo shorthand.",
     hintError: "Check the repository URL and try again.",
     hintRequired: "A repository target is required before generation can start.",
+    githubAuthTitle: "GitHub access (optional)",
+    githubTokenLabel: "Personal access token",
+    githubTokenPlaceholder: "ghp_…",
+    githubTokenHint:
+      "Raises GitHub API rate limits when fetching repository metadata, README, releases, and file trees. Sent only to your local Workbench server—not to SilentForge or third parties.",
+    rememberGithubToken: "Remember on this device",
     aiTitle: "AI-assisted structure.",
     aiBody:
       "When enabled, extracted repository information is sent to OpenAI to arrange the presentation. Repository facts remain source-bound, and failures fall back to local rules.",
@@ -543,6 +549,12 @@ const zh: MessageTree = {
     hint: "粘贴公开 GitHub 仓库 URL 或 owner/repo 简写。",
     hintError: "请检查仓库 URL 后重试。",
     hintRequired: "开始生成前需要先指定仓库。",
+    githubAuthTitle: "GitHub 访问（可选）",
+    githubTokenLabel: "Personal Access Token",
+    githubTokenPlaceholder: "ghp_…",
+    githubTokenHint:
+      "用于提高拉取仓库元数据、README、Release 与文件树时的 GitHub API 限额。仅发送至本机 Workbench 服务，不会上传至 SilentForge 或第三方。",
+    rememberGithubToken: "在此设备上记住",
     aiTitle: "AI 辅助结构。",
     aiBody: "启用后，提取的仓库信息会发送给 OpenAI 编排演示结构。事实仍受源数据约束，失败时回退到本地规则。",
     outputSettingsAria: "输出设置",

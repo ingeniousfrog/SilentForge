@@ -16,6 +16,7 @@ export type WorkbenchJob = {
   readonly id: string;
   readonly repoUrl: string;
   readonly useAi: boolean;
+  readonly githubToken?: string;
   readonly generationOptions: PresentationGenerationOptions;
   readonly status: JobStatus;
   readonly createdAt: string;
@@ -63,7 +64,8 @@ export class JobStore {
   async create(
     repoUrl: string,
     useAi = false,
-    generationOptions: PresentationGenerationOptions = {}
+    generationOptions: PresentationGenerationOptions = {},
+    githubToken?: string
   ): Promise<WorkbenchJob> {
     const id = createJobId();
     const workspaceDir = await mkdtemp(join(tmpdir(), "reposite-workbench-"));
@@ -72,6 +74,7 @@ export class JobStore {
       id,
       repoUrl,
       useAi,
+      ...(githubToken ? { githubToken } : {}),
       generationOptions,
       status: "queued",
       createdAt: now,

@@ -16,7 +16,8 @@ The default pipeline is **deterministic and source-bound**: it surfaces what the
 - [How it works](#how-it-works)
 - [Capabilities](#capabilities)
 - [Requirements](#requirements)
-- [Installation](#installation)
+- [Installation and distribution](#installation-and-distribution)
+- [GitHub authentication](#github-authentication-optional)
 - [Workbench](#workbench)
 - [CLI reference](#cli-reference)
 - [Generated output](#generated-output)
@@ -110,12 +111,30 @@ flowchart LR
 |-------------|-------|
 | **Node.js 20+** | Required for CLI and Workbench |
 | **Public GitHub repository** | `https://github.com/owner/repo` or `owner/repo` shorthand |
-| **`GITHUB_TOKEN`** | Optional; recommended for higher API rate limits |
+| **`GITHUB_TOKEN`** | Optional; recommended for higher API rate limits (CLI env var or Workbench UI) |
 | **`OPENAI_API_KEY`** | Optional; enables AI-assisted presentation planning (`--ai` or Workbench checkbox) |
+
+- EN / 中文 locale capsule; Dark / Light Workbench appearance with system `prefers-color-scheme` as the default until overridden
+- Optional GitHub personal access token field (local-only; improves API rate limits)
 
 ---
 
-## Installation
+## Installation and distribution
+
+SilentForge ships as a Node.js package. The **`reposite`** command is the compiled entrypoint declared in `package.json`:
+
+```json
+"bin": { "reposite": "./dist/cli.js" }
+```
+
+Source lives in `src/cli.ts`. Running `npm run build` compiles TypeScript into `dist/`, which exposes two subcommands:
+
+| Command | Purpose |
+|---------|---------|
+| `reposite init <url>` | Generate a static site to a local folder |
+| `reposite web` | Start the Workbench web UI on `127.0.0.1:4177` |
+
+### Build from source (recommended today)
 
 ```sh
 git clone https://github.com/ingeniousfrog/SilentForge.git
@@ -124,15 +143,71 @@ npm install
 npm run build
 ```
 
-Generate a site from the CLI:
+**Run without installing the global command:**
 
 ```sh
+# One-shot site generation
 node dist/cli.js init openai/openai-node
-# or, after linking globally:
-reposite init openai/openai-node
+
+# Workbench (compiled)
+node dist/cli.js web
+
+# Developer loop (TypeScript directly via tsx)
+npm run dev -- init openai/openai-node
+npm run web
 ```
 
-Open `<output-dir>/index.html` in a browser, or serve the directory with any static file server.
+**Install `reposite` onto your PATH:**
+
+```sh
+npm link          # from the repo root after npm run build
+reposite --help
+reposite init openai/openai-node
+reposite web
+```
+
+Alternatively, after `npm run build`:
+
+```sh
+npm install -g .
+```
+
+### Desktop packaging (DMG / EXE)
+
+Native installers are planned. Until then, distribution is **build-from-source** or **`npm link` / global install** as above. A packaged app will bundle the compiled `dist/` output and launch `reposite web` locally—no separate Node install required on the user's machine.
+
+### Verify the install
+
+```sh
+reposite --help
+reposite web
+# open http://127.0.0.1:4177/
+```
+
+Open `<output-dir>/index.html` after `reposite init`, or serve the folder with any static file server.
+
+---
+
+## GitHub authentication (optional)
+
+SilentForge reads public repository data through the **GitHub REST API** (metadata, README, releases, file tree). Authentication is optional but recommended: unauthenticated requests share a low hourly limit (~60/hour/IP); an authenticated token raises the limit substantially (~5,000/hour).
+
+The token is used **only** when calling `api.github.com`. It is never sent to OpenAI or any other third party.
+
+| Method | Where | How |
+|--------|-------|-----|
+| **Workbench UI** | Browser → your local Workbench server | Expand **GitHub access (optional)**, paste a [personal access token](https://github.com/settings/tokens), optionally check **Remember on this device** |
+| **`GITHUB_TOKEN` env var** | CLI and Workbench server fallback | `export GITHUB_TOKEN=ghp_…` before `reposite init` or `reposite web` |
+| **`--token` flag** | CLI only | `reposite init owner/repo --token ghp_…` |
+
+**Workbench behavior:**
+
+- Token is submitted with the generation job to your **local** server (`POST /api/jobs`).
+- It is kept in memory for that job only and is **not** returned by job status APIs.
+- If **Remember on this device** is checked, the token is stored in browser `localStorage` (`silentforge.githubToken`) for convenience—useful for personal machines and future desktop builds.
+- If the UI field is empty, the server falls back to `process.env.GITHUB_TOKEN` (set when you started Workbench).
+
+For public repositories, a classic PAT with default public read access is sufficient. Fine-grained tokens need **Contents: Read-only** (and **Metadata: Read-only**) on the target repository.
 
 ---
 
@@ -162,9 +237,10 @@ npm run build && npm run web:dist
 
 1. **Appearance** — Toggle **Dark / Light** in the header (defaults to system preference; persisted as `silentforge.uiTheme` after manual selection).
 2. **Locale** — Switch **EN / 中文** (persisted as `silentforge.locale`; affects Workbench copy and the next generation job).
-3. **Target** — Paste a public GitHub URL or `owner/repo` shorthand and click **Generate**.
-4. **Inspect** — Follow the generation stream; review **Overview**, **Resources**, **Code Wiki**, and **Preview** (opens automatically on completion).
-5. **Export** — Download the ZIP or use **Back to home** to start a new target.
+3. **GitHub token (optional)** — Expand **GitHub access (optional)** if you hit rate limits or generate frequently. Token stays on your machine; see [GitHub authentication](#github-authentication-optional).
+4. **Target** — Paste a public GitHub URL or `owner/repo` shorthand and click **Generate**.
+5. **Inspect** — Follow the generation stream; review **Overview**, **Resources**, **Code Wiki**, and **Preview** (opens automatically on completion).
+6. **Export** — Download the ZIP or use **Back to home** to start a new target.
 
 ### Output settings
 
@@ -297,9 +373,11 @@ Switching Workbench locale does not retroactively translate past job events; it 
 
 | Variable | Purpose |
 |----------|---------|
-| `GITHUB_TOKEN` | GitHub API authentication and rate-limit headroom |
+| `GITHUB_TOKEN` | GitHub API authentication when the Workbench UI token field is empty, or for CLI runs without `--token` |
 | `OPENAI_API_KEY` | Optional AI presentation planning (`--ai` or Workbench checkbox) |
 | `OPENAI_MODEL` | Override OpenAI model (default: `gpt-5.5`) |
+
+Workbench-local preferences (browser `localStorage`, not environment variables): `silentforge.locale`, `silentforge.uiTheme`, `silentforge.githubToken` (when "Remember on this device" is enabled).
 
 ---
 

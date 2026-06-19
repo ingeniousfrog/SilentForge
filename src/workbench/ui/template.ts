@@ -50,6 +50,30 @@ export function workbenchTemplate(styles: string, clientScript: string): string 
               </div>
             </div>
             <p class="hint" id="form-hint" data-i18n="hint">Paste a public GitHub repository URL or owner/repo shorthand.</p>
+            <details class="github-auth" id="github-auth">
+              <summary class="github-auth-summary" data-i18n="githubAuthTitle">GitHub access (optional)</summary>
+              <div class="github-auth-body">
+                <label class="github-token-field">
+                  <span data-i18n="githubTokenLabel">Personal access token</span>
+                  <input
+                    id="github-token"
+                    name="githubToken"
+                    type="password"
+                    autocomplete="off"
+                    spellcheck="false"
+                    data-i18n-placeholder="githubTokenPlaceholder"
+                    placeholder="ghp_…"
+                  />
+                </label>
+                <label class="remember-token">
+                  <input id="remember-github-token" type="checkbox" />
+                  <span data-i18n="rememberGithubToken">Remember on this device</span>
+                </label>
+                <p class="token-hint" data-i18n="githubTokenHint">
+                  Raises GitHub API rate limits when fetching repository metadata, README, releases, and file trees. Sent only to your local Workbench server—not to SilentForge or third parties.
+                </p>
+              </div>
+            </details>
             <label class="ai-option">
               <input id="use-ai" type="checkbox" />
               <span><strong data-i18n="aiTitle">AI-assisted structure.</strong> <span data-i18n="aiBody">When enabled, extracted repository information is sent to OpenAI to arrange the presentation. Repository facts remain source-bound, and failures fall back to local rules.</span></span>

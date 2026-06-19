@@ -25,6 +25,7 @@ export type WorkbenchServer = {
 const createJobSchema = z.object({
   repoUrl: z.string().trim().min(1).max(500),
   useAi: z.boolean().optional().default(false),
+  githubToken: z.string().trim().min(1).max(200).optional(),
   generationOptions: z
     .object({
       mode: z.enum(["auto", "visual-showcase", "developer-deck", "architecture-map", "compact-story"]).optional(),
@@ -94,7 +95,8 @@ async function handleRequest(store: JobStore, request: IncomingMessage, response
     const job = await store.create(
       parsedPayload.data.repoUrl,
       parsedPayload.data.useAi,
-      parsedPayload.data.generationOptions
+      parsedPayload.data.generationOptions,
+      parsedPayload.data.githubToken
     );
     queueMicrotask(() => {
       void runGenerationJob(store, job);

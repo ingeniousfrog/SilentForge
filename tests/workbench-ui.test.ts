@@ -14,6 +14,9 @@ describe("workbenchHtml", () => {
     expect(html).toContain("silentforge.recentRepositories");
     expect(html).toContain("silentforge.locale");
     expect(html).toContain("silentforge.uiTheme");
+    expect(html).toContain("silentforge.githubToken");
+    expect(html).toContain('id="github-token"');
+    expect(html).toContain('id="remember-github-token"');
     expect(html).toContain('class="lang-switch"');
     expect(html).toContain('class="theme-switch"');
     expect(html).toContain('data-ui-theme="dark"');
@@ -57,6 +60,7 @@ describe("workbenchHtml", () => {
     expect(workbenchStyles()).toContain("--bg:");
     expect(workbenchClientScript("{}")).toContain("collectGenerationOptions");
     expect(workbenchClientScript("{}")).toContain("applyLocale");
+    expect(workbenchClientScript("{}")).toContain("collectGithubToken");
     expect(workbenchClientScript("{}")).toContain("applyTheme");
     expect(workbenchClientScript("{}")).toContain("prefers-color-scheme");
     expect(workbenchClientScript("{}")).toContain("resetToHome");

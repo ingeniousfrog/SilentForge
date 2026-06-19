@@ -13,7 +13,9 @@ export async function runGenerationJob(store: JobStore, job: WorkbenchJob): Prom
     store.pushEvent(job.id, "step", t(locale, "generator.parsedUrl"));
 
     store.pushEvent(job.id, "step", t(locale, "generator.fetching"));
-    const snapshot = await fetchRepositorySnapshot(job.repoUrl, { token: process.env.GITHUB_TOKEN });
+    const snapshot = await fetchRepositorySnapshot(job.repoUrl, {
+      token: job.githubToken ?? process.env.GITHUB_TOKEN
+    });
     store.patch(job.id, { snapshot });
 
     store.pushEvent(

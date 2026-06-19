@@ -21,6 +21,14 @@ describe("JobStore", () => {
     expect(job.useAi).toBe(false);
   });
 
+  it("stores github tokens on jobs without exposing them publicly", async () => {
+    const store = new JobStore();
+    const job = await store.create("acme/widgetkit", false, {}, "ghp_test_token");
+
+    expect(job.githubToken).toBe("ghp_test_token");
+    expect(store.publicJob(job.id)).not.toHaveProperty("githubToken");
+  });
+
   it("stores generation options and exposes completion timestamps publicly", async () => {
     const store = new JobStore();
     const job = await store.create("acme/widgetkit", true, {
