@@ -52,7 +52,10 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
       const contentEl = document.querySelector("#content");
       const downloadEl = document.querySelector("#download");
       const backHomeButton = document.querySelector("#back-home-button");
-      const deployGuideEl = document.querySelector("#deploy-guide");
+      const tabsActionsEl = document.querySelector("#tabs-actions");
+      const deployButton = document.querySelector("#deploy-button");
+      const deployDialog = document.querySelector("#deploy-dialog");
+      const deployDialogClose = document.querySelector("#deploy-dialog-close");
       const deployCommandsEl = document.querySelector("#deploy-commands");
       const historyEl = document.querySelector("#history");
       const historyListEl = document.querySelector("#history-list");
@@ -355,6 +358,19 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
         window.history.replaceState({}, "", window.location.pathname);
       }
       backHomeButton?.addEventListener("click", () => resetToHome());
+      deployButton?.addEventListener("click", () => {
+        if (!state.resources) {
+          return;
+        }
+        renderDeployCommands();
+        deployDialog?.showModal();
+      });
+      deployDialogClose?.addEventListener("click", () => deployDialog?.close());
+      deployDialog?.addEventListener("click", (event) => {
+        if (event.target === deployDialog) {
+          deployDialog.close();
+        }
+      });
 
       renderHistory();
       renderMode("idle");
@@ -468,6 +484,9 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
         state.mode = mode;
         shell.dataset.mode = mode === "idle" ? "idle" : "active";
         modeLabel.textContent = mode === "idle" ? t("standby") : t("running");
+        if (backHomeButton) {
+          backHomeButton.hidden = mode === "idle";
+        }
       }
 
       function renderStatus(status, message) {
@@ -482,14 +501,14 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
       }
 
       function updatePostGenerationActions(visible) {
-        if (backHomeButton) {
-          backHomeButton.hidden = !visible;
+        if (tabsActionsEl) {
+          tabsActionsEl.hidden = !visible;
         }
-        if (deployGuideEl) {
-          deployGuideEl.hidden = !visible;
-          if (visible) {
-            renderDeployCommands();
-          }
+        if (deployButton) {
+          deployButton.disabled = !visible || !state.resources;
+        }
+        if (visible && state.resources) {
+          renderDeployCommands();
         }
       }
 
@@ -521,6 +540,9 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
       }
 
       function resetToHome() {
+        if (deployDialog?.open) {
+          deployDialog.close();
+        }
         renderMode("idle");
         shell.dataset.status = "idle";
         state.job = null;

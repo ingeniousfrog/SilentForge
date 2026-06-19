@@ -32,7 +32,9 @@ describe("workbenchHtml", () => {
     expect(html).toContain('data-tab="wiki"');
     expect(html).toContain('data-tab="preview"');
     expect(html).toContain('id="download"');
-    expect(html).toContain('id="deploy-guide"');
+    expect(html).toContain('id="deploy-dialog"');
+    expect(html).toContain('id="deploy-button"');
+    expect(html).toContain('id="tabs-actions"');
     expect(html).toContain("deploy-steps");
     expect(html).toContain("PAGES_WORKFLOW_TEMPLATE");
     expect(html).toContain("copy-pages-workflow-deploy");
@@ -92,6 +94,9 @@ describe("workbenchHtml", () => {
     expect(workbenchClientScript("{}")).toContain("prefers-color-scheme");
     expect(workbenchClientScript("{}")).toContain("resetToHome");
     expect(workbenchClientScript("{}")).toContain("back-home-button");
+    expect(workbenchClientScript("{}")).toContain("deploy-dialog");
     expect(workbenchHtml()).toContain('id="back-home-button"');
+    expect(workbenchStyles()).toContain(".tabs-bar");
+    expect(workbenchStyles()).toContain(".deploy-dialog");
   });
 });

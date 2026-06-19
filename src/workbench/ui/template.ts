@@ -23,7 +23,10 @@ export function workbenchTemplate(styles: string, clientScript: string): string 
     <div class="shell" data-mode="idle" data-status="idle">
       <header class="page-header">
         <div class="brand-row">
-          <div class="eyebrow" data-i18n="eyebrow">SilentForge Workbench</div>
+          <div class="brand-start">
+            <button type="button" id="back-home-button" class="back-home-link" hidden data-i18n="backToHome">Back to home</button>
+            <div class="eyebrow" data-i18n="eyebrow">SilentForge Workbench</div>
+          </div>
           <div class="brand-actions">
             <div class="theme-switch" role="group" aria-label="Appearance" data-i18n-aria="themeUiAria">
               <button type="button" class="theme-pill active" data-ui-theme="dark" data-i18n="themeDark">Dark</button>
@@ -186,25 +189,20 @@ export function workbenchTemplate(styles: string, clientScript: string): string 
           <div class="panel-body">
             <p id="status" class="status-copy" data-i18n="statusWaiting">Waiting for a GitHub repository target.</p>
             <div id="timeline" class="timeline"></div>
-            <div class="actions">
-              <a id="download" class="download" href="#" aria-disabled="true" data-i18n="downloadZip">Download ZIP</a>
-              <button type="button" id="back-home-button" class="secondary-button back-home-button" hidden data-i18n="backToHome">Back to home</button>
-            </div>
-            <details class="deploy-guide" id="deploy-guide" hidden>
-              <summary class="deploy-guide-summary" data-i18n="deployTitle">Deploy</summary>
-              <div class="deploy-guide-body">
-                <p class="deploy-guide-lead" data-i18n="deployLead">Copy commands for common static hosts. Replace paths if you renamed the output folder.</p>
-                <div id="deploy-commands" class="deploy-commands"></div>
-              </div>
-            </details>
           </div>
         </section>
         <section class="panel content">
-          <div class="tabs">
-            <button class="tab active" type="button" data-tab="overview" data-i18n="tabOverview">Overview</button>
-            <button class="tab" type="button" data-tab="resources" data-i18n="tabResources">Resources</button>
-            <button class="tab" type="button" data-tab="wiki" data-i18n="tabWiki">Code Wiki</button>
-            <button class="tab" type="button" data-tab="preview" data-i18n="tabPreview">Preview</button>
+          <div class="tabs-bar">
+            <div class="tabs">
+              <button class="tab active" type="button" data-tab="overview" data-i18n="tabOverview">Overview</button>
+              <button class="tab" type="button" data-tab="resources" data-i18n="tabResources">Resources</button>
+              <button class="tab" type="button" data-tab="wiki" data-i18n="tabWiki">Code Wiki</button>
+              <button class="tab" type="button" data-tab="preview" data-i18n="tabPreview">Preview</button>
+            </div>
+            <div class="tabs-actions" id="tabs-actions" hidden>
+              <a id="download" class="download tabs-download" href="#" aria-disabled="true" data-i18n="downloadZip">Download ZIP</a>
+              <button type="button" id="deploy-button" class="secondary-button tabs-deploy" disabled data-i18n="deployTitle">Deploy</button>
+            </div>
           </div>
           <div id="content" class="panel-body">
             <div class="preview-placeholder">
@@ -214,6 +212,16 @@ export function workbenchTemplate(styles: string, clientScript: string): string 
         </section>
       </main>
     </div>
+    <dialog class="deploy-dialog" id="deploy-dialog">
+      <div class="deploy-dialog-header">
+        <h2 class="deploy-dialog-title" data-i18n="deployTitle">Deploy</h2>
+        <button type="button" class="deploy-dialog-close" id="deploy-dialog-close" aria-label="Close" data-i18n-aria="deployCloseAria">×</button>
+      </div>
+      <div class="deploy-dialog-body">
+        <p class="deploy-guide-lead" data-i18n="deployLead">Copy commands for common static hosts. Replace paths if you renamed the output folder.</p>
+        <div id="deploy-commands" class="deploy-commands"></div>
+      </div>
+    </dialog>
     <script>${clientScript}</script>
   </body>
 </html>`;

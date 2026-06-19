@@ -274,6 +274,7 @@ const en: MessageTree = {
     statusWaiting: "Waiting for a GitHub repository target.",
     downloadZip: "Download ZIP",
     deployTitle: "Deploy",
+    deployCloseAria: "Close deploy panel",
     deployLead:
       "Publish the generated site. GitHub Pages is recommended for repository owners—the workflow below is generated for you; copy it into your repo (no need to find files on disk).",
     deployGithubPagesTitle: "GitHub Pages (recommended)",
@@ -637,6 +638,7 @@ const zh: MessageTree = {
     statusWaiting: "等待 GitHub 仓库目标。",
     downloadZip: "下载 ZIP",
     deployTitle: "部署",
+    deployCloseAria: "关闭部署面板",
     deployLead:
       "发布生成的站点。GitHub 创作者推荐使用 GitHub Pages——下面的 workflow 已为你生成，复制进仓库即可，无需在本机找文件。",
     deployGithubPagesTitle: "GitHub Pages（推荐）",
