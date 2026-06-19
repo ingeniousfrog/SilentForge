@@ -1,5 +1,7 @@
-export function workbenchClientScript(i18nJson: string): string {
+export function workbenchClientScript(i18nJson: string, workflowTemplateJson: string, workflowPathJson: string): string {
   return `      const I18N = ${i18nJson};
+      const PAGES_WORKFLOW_TEMPLATE = ${workflowTemplateJson};
+      const PAGES_WORKFLOW_PATH = ${workflowPathJson};
       const localeKey = "silentforge.locale";
       const uiThemeKey = "silentforge.uiTheme";
       const githubTokenKey = "silentforge.githubToken";
@@ -741,83 +743,92 @@ export function workbenchClientScript(i18nJson: string): string {
       }
 
       function buildPagesWorkflow(fullName) {
-        const repo = String(fullName || "owner/repo");
-        return "name: Deploy SilentForge presentation site\\n\\n" +
-          "on:\\n" +
-          "  push:\\n" +
-          "    branches: [main]\\n" +
-          "  workflow_dispatch:\\n\\n" +
-          "permissions:\\n" +
-          "  contents: read\\n" +
-          "  pages: write\\n" +
-          "  id-token: write\\n\\n" +
-          "concurrency:\\n" +
-          "  group: pages\\n" +
-          "  cancel-in-progress: false\\n\\n" +
-          "jobs:\\n" +
-          "  build:\\n" +
-          "    runs-on: ubuntu-latest\\n" +
-          "    steps:\\n" +
-          "      - uses: actions/checkout@v4\\n" +
-          "      - uses: actions/setup-node@v4\\n" +
-          "        with:\\n" +
-          "          node-version: \\\"20\\\"\\n" +
-          "      - name: Generate presentation site\\n" +
-          "        env:\\n" +
-          "          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}\\n" +
-          "        run: npx silentforge@latest init " + repo + " -o site --locale en\\n" +
-          "      - uses: actions/upload-pages-artifact@v3\\n" +
-          "        with:\\n" +
-          "          path: site\\n\\n" +
-          "  deploy:\\n" +
-          "    needs: build\\n" +
-          "    runs-on: ubuntu-latest\\n" +
-          "    environment:\\n" +
-          "      name: github-pages\\n" +
-          "      url: \${{ steps.deployment.outputs.page_url }}\\n" +
-          "    steps:\\n" +
-          "      - id: deployment\\n" +
-          "        uses: actions/deploy-pages@v4\\n";
+        return PAGES_WORKFLOW_TEMPLATE.replaceAll("__FULL_NAME__", String(fullName || "owner/repo"));
+      }
+
+      function buildPagesSetupChecklist(fullName, pagesUrl, repoUrl) {
+        return [
+          "# " + fullName + " → GitHub Pages",
+          "",
+          "1. " + t("deployPagesStep1") + " " + repoUrl,
+          "2. " + t("deployPagesStep2"),
+          "3. " + t("deployPagesStep3"),
+          "4. " + t("deployPagesStep4"),
+          "   File: " + PAGES_WORKFLOW_PATH,
+          "5. " + t("deployPagesStep5"),
+          "6. " + t("deployPagesStep6") + " " + pagesUrl
+        ].join("\\n");
       }
 
       function renderDeployCommands() {
         if (!deployCommandsEl || !state.resources) {
           return;
         }
-        const fullName = state.resources.repository.fullName;
+        const repo = state.resources.repository;
+        const fullName = repo.fullName;
         const outputDir = outputDirName(fullName);
         const pagesUrl = pagesSiteUrl(fullName);
-        const blocks = [
-          {
-            title: t("deployGithubPagesTitle"),
-            body: t("deployGithubPagesBody"),
-            command: "# Enable Settings → Pages → GitHub Actions, then commit .github/workflows/silentforge-pages.yml\\n# Expected site URL:\\n" + pagesUrl
-          },
+        const workflowYaml = buildPagesWorkflow(fullName);
+        const checklist = buildPagesSetupChecklist(fullName, pagesUrl, repo.htmlUrl);
+        const pagesSection =
+          '<section class="deploy-block deploy-block-pages">' +
+          '<div class="deploy-block-header"><strong>' + escapeHtml(t("deployGithubPagesTitle")) + '</strong>' +
+          '<p>' + escapeHtml(t("deployGithubPagesLead")) + '</p></div>' +
+          '<ol class="deploy-steps">' +
+          '<li>' + escapeHtml(t("deployPagesStep1")) + ' <a href="' + escapeAttribute(repo.htmlUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(t("deployOpenRepo")) + '</a></li>' +
+          '<li>' + escapeHtml(t("deployPagesStep2")) + '</li>' +
+          '<li>' + escapeHtml(t("deployPagesStep3")) + '</li>' +
+          '<li>' + escapeHtml(t("deployPagesStep4")) + '</li>' +
+          '<li>' + escapeHtml(t("deployPagesStep5")) + '</li>' +
+          '<li>' + escapeHtml(t("deployPagesStep6")) + ' <a href="' + escapeAttribute(pagesUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(pagesUrl) + '</a></li>' +
+          '</ol>' +
+          '<div class="deploy-meta">' +
+          '<p><span class="deploy-meta-label">' + escapeHtml(t("deployWorkflowPathLabel")) + '</span> <code class="deploy-path">' + escapeHtml(PAGES_WORKFLOW_PATH) + '</code></p>' +
+          '<p><span class="deploy-meta-label">' + escapeHtml(t("deployExpectedUrl")) + '</span> <code>' + escapeHtml(pagesUrl) + '</code></p>' +
+          '</div>' +
+          '<p class="deploy-workflow-label">' + escapeHtml(t("deployWorkflowLabel")) + '</p>' +
+          '<pre class="deploy-command deploy-workflow"><code>' + escapeHtml(workflowYaml) + '</code></pre>' +
+          '<div class="deploy-button-row">' +
+          '<button type="button" class="secondary-button copy-button" id="copy-pages-workflow-deploy" data-copy-label="' + escapeAttribute(t("copyPagesWorkflow")) + '">' + escapeHtml(t("copyPagesWorkflow")) + '</button>' +
+          '<button type="button" class="secondary-button copy-button" id="copy-deploy-checklist" data-copy-label="' + escapeAttribute(t("copyDeployChecklist")) + '">' + escapeHtml(t("copyDeployChecklist")) + '</button>' +
+          '</div></section>' +
+          '<section class="deploy-block deploy-block-other">' +
+          '<div class="deploy-block-header"><strong>' + escapeHtml(t("deployOtherHostsTitle")) + '</strong>' +
+          '<p>' + escapeHtml(t("deployOtherHostsLead")) + '</p></div>' +
+          '<div class="deploy-commands-nested">';
+        const otherBlocks = [
           {
             title: t("deployVercelTitle"),
-            body: "",
             command: "npx --yes vercel deploy " + outputDir + " --prod"
           },
           {
             title: t("deployCloudflareTitle"),
-            body: "",
             command: "npx --yes wrangler pages deploy " + outputDir + " --project-name=" + (fullName.split("/")[1] || "presentation-site")
           },
           {
             title: t("deployStaticTitle"),
-            body: "",
             command: "npx --yes serve " + JSON.stringify(outputDir)
           }
         ];
-        deployCommandsEl.innerHTML = blocks.map((block) =>
-          '<section class="deploy-block"><div class="deploy-block-header"><strong>' + escapeHtml(block.title) + '</strong>' +
-          (block.body ? '<p>' + escapeHtml(block.body) + '</p>' : '') +
-          '</div><pre class="deploy-command"><code>' + escapeHtml(block.command) + '</code></pre>' +
-          '<button type="button" class="secondary-button copy-button deploy-copy" data-copy-label="' + escapeAttribute(t("copyCommand")) + '" data-command="' + escapeAttribute(block.command) + '">' + escapeHtml(t("copyCommand")) + '</button></section>'
+        const otherHtml = otherBlocks.map((block) =>
+          '<div class="deploy-block deploy-block-nested">' +
+          '<div class="deploy-block-header"><strong>' + escapeHtml(block.title) + '</strong></div>' +
+          '<pre class="deploy-command"><code>' + escapeHtml(block.command) + '</code></pre>' +
+          '<button type="button" class="secondary-button copy-button deploy-copy" data-copy-label="' + escapeAttribute(t("copyCommand")) + '">' + escapeHtml(t("copyCommand")) + '</button>' +
+          '</div>'
         ).join("");
-        deployCommandsEl.querySelectorAll(".deploy-copy").forEach((button) => {
+        deployCommandsEl.innerHTML = pagesSection + otherHtml + '</div></section>';
+        const workflowButton = deployCommandsEl.querySelector("#copy-pages-workflow-deploy");
+        const checklistButton = deployCommandsEl.querySelector("#copy-deploy-checklist");
+        workflowButton?.addEventListener("click", async () => {
+          await copyText(workflowYaml, workflowButton);
+        });
+        checklistButton?.addEventListener("click", async () => {
+          await copyText(checklist, checklistButton);
+        });
+        deployCommandsEl.querySelectorAll(".deploy-copy").forEach((button, index) => {
           button.addEventListener("click", async () => {
-            await copyText(button.getAttribute("data-command") || "", button);
+            await copyText(otherBlocks[index].command, button);
           });
         });
       }

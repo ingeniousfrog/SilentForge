@@ -1,0 +1,77 @@
+export const pagesWorkflowPath = ".github/workflows/silentforge-pages.yml";
+
+export function buildPagesWorkflowYaml(fullName: string): string {
+  const repo = fullName.trim() || "owner/repo";
+  return `name: Deploy SilentForge presentation site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Generate presentation site
+        env:
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+        run: npx silentforge@latest init ${repo} -o site --locale en
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: \${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+`;
+}
+
+export function buildPagesSetupChecklist(
+  fullName: string,
+  pagesUrl: string,
+  locale: "en" | "zh" = "en"
+): string {
+  const repoLabel = fullName || "owner/repo";
+  if (locale === "zh") {
+    return [
+      `# 将 ${repoLabel} 发布到 GitHub Pages`,
+      "",
+      "1. 在浏览器打开你的 GitHub 仓库。",
+      "2. 进入 Settings → Pages → Build and deployment。",
+      '3. 将 Source 设为 **GitHub Actions**（不要选 Deploy from a branch）。',
+      `4. 在仓库中新建文件 \`${pagesWorkflowPath}\`，粘贴 SilentForge Workbench 提供的 workflow YAML。`,
+      "5. Commit 并 push 到 main；在 Actions 标签页等待 workflow 跑完。",
+      `6. 完成后访问：${pagesUrl}`
+    ].join("\n");
+  }
+  return [
+    `# Publish ${repoLabel} to GitHub Pages`,
+    "",
+    "1. Open your GitHub repository in the browser.",
+    "2. Go to Settings → Pages → Build and deployment.",
+    '3. Set Source to **GitHub Actions** (not Deploy from a branch).',
+    `4. Create \`${pagesWorkflowPath}\` in the repository and paste the workflow YAML from SilentForge Workbench.`,
+    "5. Commit and push to main, then wait for the workflow to finish in the Actions tab.",
+    `6. Visit your live site: ${pagesUrl}`
+  ].join("\n");
+}

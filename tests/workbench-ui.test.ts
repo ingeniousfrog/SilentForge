@@ -33,7 +33,10 @@ describe("workbenchHtml", () => {
     expect(html).toContain('data-tab="preview"');
     expect(html).toContain('id="download"');
     expect(html).toContain('id="deploy-guide"');
-    expect(html).toContain("renderDeployCommands");
+    expect(html).toContain("deploy-steps");
+    expect(html).toContain("PAGES_WORKFLOW_TEMPLATE");
+    expect(html).toContain("copy-pages-workflow-deploy");
+    expect(html).toContain("copy-deploy-checklist");
     expect(html).toContain("buildDiagnosticsMarkdown");
     expect(html).toContain("buildReadmeBadge");
     expect(html).toContain("buildPagesWorkflow");
@@ -82,8 +85,8 @@ describe("workbenchHtml", () => {
     expect(workbenchStyles()).toContain(".workbench-settings");
     expect(workbenchClientScript("{}")).toContain("applyLocale");
     expect(workbenchStyles()).toContain("--bg:");
-    expect(workbenchClientScript("{}")).toContain("startGeneration");
-    expect(workbenchClientScript("{}")).toContain("normalizeGithubToken");
+    expect(workbenchClientScript("{}", "\"name: test\\n\"", "\".github/workflows/test.yml\"")).toContain("renderDeployCommands");
+    expect(workbenchClientScript("{}", "\"name: test\\n\"", "\".github/workflows/test.yml\"")).toContain("PAGES_WORKFLOW_TEMPLATE");
     expect(workbenchClientScript("{}")).toContain("saveSettings");
     expect(workbenchClientScript("{}")).toContain("applyTheme");
     expect(workbenchClientScript("{}")).toContain("prefers-color-scheme");

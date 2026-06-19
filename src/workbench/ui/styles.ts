@@ -760,6 +760,68 @@ ${workbenchShellCss()}
       .diagnostics-panel {
         margin-bottom: var(--space-3);
       }
+      .deploy-workflow {
+        max-height: 280px;
+        overflow: auto;
+      }
+      .deploy-workflow-label {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 0.8125rem;
+        font-weight: 500;
+      }
+      .deploy-steps {
+        margin: 0 0 12px;
+        padding-left: 1.2rem;
+        color: var(--text);
+        font-size: 0.8125rem;
+        line-height: 1.6;
+      }
+      .deploy-steps a {
+        color: var(--cyan);
+      }
+      .deploy-meta {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--bg);
+      }
+      .deploy-meta p {
+        margin: 0;
+        font-size: 0.8125rem;
+        line-height: 1.5;
+      }
+      .deploy-meta-label {
+        display: block;
+        margin-bottom: 2px;
+        color: var(--muted);
+        font-size: 0.75rem;
+      }
+      .deploy-path {
+        font-family: var(--mono);
+        font-size: 0.75rem;
+      }
+      .deploy-button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .deploy-block-pages {
+        border-color: color-mix(in srgb, var(--cyan) 35%, var(--line));
+      }
+      .deploy-block-other {
+        margin-top: 4px;
+      }
+      .deploy-commands-nested {
+        display: grid;
+        gap: 10px;
+      }
+      .deploy-block-nested {
+        padding: 10px;
+      }
       .tabs {
         display: flex;
         gap: 4px;
