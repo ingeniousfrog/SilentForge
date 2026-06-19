@@ -16,4 +16,6 @@ The SilentForge repository publishes its own generated presentation site to GitH
 
 **https://ingeniousfrog.github.io/SilentForge/**
 
+Screenshots of the Workbench and generated output live in [docs/screenshots/](../docs/screenshots/).
+
 Enable Pages with **Settings → Pages → Build and deployment → GitHub Actions**, then run the workflow in [`.github/workflows/silentforge-pages.yml`](../.github/workflows/silentforge-pages.yml).

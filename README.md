@@ -1,22 +1,36 @@
 # SilentForge
 
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+[![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Live demo](https://img.shields.io/badge/demo-GitHub%20Pages-6366f1?style=for-the-badge)](https://ingeniousfrog.github.io/SilentForge/)
+
 **Transform public GitHub repositories into portable, evidence-backed static presentation sites.**
 
-SilentForge is a local-first toolchain for turning repository signals—README content, metadata, file trees, releases, and lightweight code analysis—into self-contained HTML you can preview, edit, zip, and deploy to any static host. It ships as the `reposite` CLI and a browser-based **Workbench** for interactive generation.
+SilentForge reads README content, metadata, file trees, releases, and lightweight code signals, then emits self-contained HTML you can preview, zip, and deploy anywhere. Use the **`reposite` / `silentforge` CLI** for one-shot generation, or the local **Workbench** for interactive preview and GitHub Pages deployment.
 
-The default pipeline is **deterministic and source-bound**: it surfaces what the repository actually documents and omits sections without evidence. Optional OpenAI-assisted planning may reorder the narrative, but every claim must trace back to extracted repository data; failures fall back to local rules.
+The pipeline is **deterministic and source-bound**—no fabricated sections. Optional OpenAI planning reorders the narrative but every claim traces back to extracted repository data.
 
-[中文文档](./README-CN.md)
+[中文文档](./README-CN.md) · **[Live demo](https://ingeniousfrog.github.io/SilentForge/)** — presentation site generated from this repository
+
+---
+
+## Screenshots
+
+| Workbench | Preview & export | Deploy |
+|-----------|------------------|--------|
+| Paste a repo URL, tune output settings, and generate locally. | Stream generation steps, inspect diagnostics, preview the site, download ZIP. | Copy a GitHub Pages workflow and publish from your repository. |
+| ![SilentForge Workbench home screen](./docs/screenshots/workbench-home.png) | ![SilentForge Workbench preview tab with generated site](./docs/screenshots/workbench-preview.png) | ![SilentForge Deploy dialog with GitHub Pages steps](./docs/screenshots/deploy-dialog.png) |
 
 ---
 
 ## Table of contents
 
 - [Quick start](#quick-start)
+- [Usage](#usage)
 - [Examples](#examples)
 - [Overview](#overview)
 - [How it works](#how-it-works)
-- [Capabilities](#capabilities)
+- [Features](#features)
 - [Requirements](#requirements)
 - [Installation and distribution](#installation-and-distribution)
 - [GitHub authentication](#github-authentication-optional)
@@ -27,6 +41,7 @@ The default pipeline is **deterministic and source-bound**: it surfaces what the
 - [Internationalization](#internationalization)
 - [Environment variables](#environment-variables)
 - [Design guarantees](#design-guarantees)
+- [FAQ](#faq)
 - [Development](#development)
 - [License](#license)
 
@@ -69,6 +84,30 @@ npx --yes serve "vercel/next.js-site"
 
 ---
 
+## Usage
+
+Typical workflows after [Quick start](#quick-start):
+
+```sh
+# CLI — generate to a folder and open locally
+npx silentforge init owner/repo
+open owner/repo-site/index.html    # macOS; adjust path on Linux/Windows
+
+# Workbench — interactive preview, diagnostics, ZIP, deploy guide
+npx silentforge web
+# → http://127.0.0.1:4177/
+
+# Custom output directory and locale
+npx silentforge init owner/repo -o my-site --locale zh
+
+# Optional AI-assisted chapter ordering (requires OPENAI_API_KEY)
+OPENAI_API_KEY=sk-… npx silentforge init owner/repo --ai
+```
+
+**Publish to GitHub Pages:** generate in Workbench, open **Deploy**, copy the workflow YAML into `.github/workflows/silentforge-pages.yml`, enable **Settings → Pages → GitHub Actions**, then push to `main`. See [Deploy to GitHub Pages](#deploy-to-github-pages).
+
+---
+
 ## Examples
 
 Try SilentForge on well-documented public repositories:
@@ -83,7 +122,7 @@ Try SilentForge on well-documented public repositories:
 
 See [examples/README.md](./examples/README.md) for more detail.
 
-**Live demo:** [SilentForge presentation site on GitHub Pages](https://ingeniousfrog.github.io/SilentForge/) — generated from this repository via [`.github/workflows/silentforge-pages.yml`](./.github/workflows/silentforge-pages.yml).
+**Live demo:** [SilentForge on GitHub Pages](https://ingeniousfrog.github.io/SilentForge/) — auto-generated from **this repository** on every push to `main` ([workflow](./.github/workflows/silentforge-pages.yml)). Use it as a reference for what your own repo can look like after deployment.
 
 ---
 
@@ -110,41 +149,14 @@ flowchart LR
 
 ---
 
-## Capabilities
+## Features
 
-### Presentation layer
-
-- Scroll-story `index.html` with sticky chapter navigation and detail routes
-- Three visual themes for generated sites: Dark Signal, Editorial Light, Blueprint
-- Five narrative modes: developer deck, architecture handoff, visual showcase, compact story, or auto-selection from repository signals
-- Configurable chapter toggles; empty sections are skipped automatically
-
-### Code wiki
-
-- Detected tech stack, entry files, and configuration signals
-- Directory summaries, module map, and locally rendered Mermaid architecture diagram
-- Source-bound detection—no inferred frameworks or fabricated structure
-
-### Repository diagnostics
-
-- Readiness score with graded strengths, gaps, and actionable recommendations
-- Surfaced in Workbench **Overview** before you publish
-
-### Workbench
-
-- Search-first UI: paste a URL, stream generation steps over SSE, inspect results in four tabs
-- **Overview** — diagnostics and summary metrics
-- **Resources** — parsed README, metadata, and raw signals
-- **Code Wiki** — codebase analysis output
-- **Preview** — in-browser iframe of the generated site; auto-opens when generation completes
-- ZIP download of the exact files shown in Preview
-- EN / 中文 locale capsule; Dark / Light Workbench appearance with system `prefers-color-scheme` as the default until overridden
-
-### Output contract
-
-- No build step required on the consumer side—open `index.html` or upload the folder
-- Preview and ZIP always reference the same artifact set
-- Generated README in the output directory documents deployment options
+- **Scroll-story presentation sites** — sticky chapter navigation, detail routes, three themes (Dark Signal, Editorial Light, Blueprint), five narrative modes or auto-selection from repository signals
+- **Code wiki** — detected stack, entry files, config signals, directory summaries, module map, and offline Mermaid architecture diagram
+- **Repository diagnostics** — readiness score with strengths, gaps, and recommendations in Workbench **Overview**
+- **Local Workbench** — paste a URL, stream generation over SSE, inspect **Overview / Resources / Code Wiki / Preview**, download ZIP, copy GitHub Pages workflow from **Deploy**
+- **Source-bound output** — plain HTML, CSS, JS, and JSON; no consumer build step; Preview and ZIP share identical files
+- **Internationalization** — Workbench and generated site chrome in EN / 中文; repository facts stay as extracted from the source repo
 
 ---
 
@@ -156,9 +168,6 @@ flowchart LR
 | **Public GitHub repository** | `https://github.com/owner/repo` or `owner/repo` shorthand |
 | **`GITHUB_TOKEN`** | Optional; recommended for higher API rate limits (CLI env var or Workbench UI) |
 | **`OPENAI_API_KEY`** | Optional; enables AI-assisted presentation planning (`--ai` or Workbench checkbox) |
-
-- EN / 中文 locale capsule; Dark / Light Workbench appearance with system `prefers-color-scheme` as the default until overridden
-- Optional GitHub personal access token field (local-only; improves API rate limits)
 
 ---
 
@@ -462,6 +471,30 @@ Workbench-local preferences (browser `localStorage`, not environment variables):
 | **Single artifact path** | Preview, ZIP, and CLI output share identical files |
 | **Local-first** | No hosted build pipeline; runs entirely on your machine |
 | **Graceful AI fallback** | Rule-based planning when OpenAI is unavailable or validation fails |
+
+---
+
+## FAQ
+
+### Do I need a GitHub token?
+
+No for occasional public repos. A [personal access token](https://github.com/settings/tokens) helps when you hit API rate limits (~60 requests/hour unauthenticated vs ~5,000/hour authenticated).
+
+### Is the Live demo the official SilentForge website?
+
+It is a **generated presentation site** built from this repository by SilentForge itself—useful as a sample of output, not a separate marketing site.
+
+### Can I deploy to hosts other than GitHub Pages?
+
+Yes. Download the ZIP or upload the output folder to Vercel, Cloudflare Pages, Netlify, or any static host. Workbench **Deploy** includes copy-paste commands.
+
+### Does SilentForge work on private repositories?
+
+The current release targets **public** repositories. Private repo support is planned.
+
+### Will SilentForge invent features not in my README?
+
+No. Sections without repository evidence are omitted. Optional AI may reorder chapters but must cite extracted signals; failures fall back to local rules.
 
 ---
 
