@@ -546,7 +546,12 @@ ${workbenchShellCss()}
         font-size: 0.75rem;
       }
       .actions {
+        display: grid;
+        gap: 10px;
         margin-top: var(--space-2);
+      }
+      .back-home-button[hidden] {
+        display: none;
       }
       .secondary-button {
         display: inline-flex;
@@ -566,31 +571,6 @@ ${workbenchShellCss()}
       .secondary-button:hover {
         border-color: var(--cyan);
         background: rgba(98, 230, 255, 0.12);
-      }
-      .completion-page {
-        display: grid;
-        gap: var(--space-2);
-        padding: var(--space-3);
-        border: 1px solid rgba(110, 247, 177, 0.28);
-        border-radius: var(--radius-md);
-        background:
-          linear-gradient(135deg, rgba(110, 247, 177, 0.08), rgba(98, 230, 255, 0.04)),
-          rgba(8, 14, 22, 0.72);
-      }
-      .completion-page h2 {
-        margin: 0;
-        font-size: 1.35rem;
-        letter-spacing: -0.02em;
-      }
-      .completion-page p {
-        margin: 0;
-        color: var(--muted);
-        line-height: 1.55;
-      }
-      .completion-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
       }
       .download {
         min-height: 44px;

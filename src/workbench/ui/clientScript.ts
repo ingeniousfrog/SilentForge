@@ -10,8 +10,7 @@ export function workbenchClientScript(i18nJson: string): string {
         job: null,
         resources: null,
         activeTab: "overview",
-        locale: "en",
-        showCompletionPage: false
+        locale: "en"
       };
 
       const shell = document.querySelector(".shell");
@@ -26,6 +25,7 @@ export function workbenchClientScript(i18nJson: string): string {
       const timelineEl = document.querySelector("#timeline");
       const contentEl = document.querySelector("#content");
       const downloadEl = document.querySelector("#download");
+      const backHomeButton = document.querySelector("#back-home-button");
       const historyEl = document.querySelector("#history");
       const historyListEl = document.querySelector("#history-list");
       const generationModeEl = document.querySelector("#generation-mode");
@@ -101,16 +101,6 @@ export function workbenchClientScript(i18nJson: string): string {
         if (state.resources) {
           renderContent();
         }
-        if (state.showCompletionPage && shell.dataset.status === "complete") {
-          const backHome = contentEl.querySelector("#back-home-button");
-          if (backHome) backHome.textContent = t("backToHome");
-          const previewButton = contentEl.querySelector("#completion-preview-button");
-          if (previewButton) previewButton.textContent = t("viewPreview");
-          const title = contentEl.querySelector(".completion-page h2");
-          if (title) title.textContent = t("completionTitle");
-          const body = contentEl.querySelector(".completion-page p");
-          if (body) body.textContent = t("completionBody");
-        }
       }
 
       langPills.forEach((pill) => {
@@ -124,6 +114,7 @@ export function workbenchClientScript(i18nJson: string): string {
       }
 
       bindOutputSettings();
+      backHomeButton?.addEventListener("click", () => resetToHome());
 
       renderHistory();
       renderMode("idle");
@@ -141,7 +132,7 @@ export function workbenchClientScript(i18nJson: string): string {
         renderHistory();
         renderMode("active");
         renderStatus("submitting", t("creatingJob"));
-        state.showCompletionPage = false;
+        updatePostGenerationActions(false);
         startButton.disabled = true;
         timelineEl.innerHTML = "";
         state.job = null;
@@ -174,7 +165,6 @@ export function workbenchClientScript(i18nJson: string): string {
       tabs.forEach((tab) => {
         tab.addEventListener("click", () => {
           state.activeTab = tab.dataset.tab;
-          state.showCompletionPage = false;
           tabs.forEach((item) => item.classList.toggle("active", item === tab));
           renderContent();
         });
@@ -191,19 +181,20 @@ export function workbenchClientScript(i18nJson: string): string {
             if (type === "complete") {
               renderStatus("complete", t("generationComplete"));
               source.close();
+              state.activeTab = "preview";
+              tabs.forEach((item) => item.classList.toggle("active", item.dataset.tab === "preview"));
               await loadResources(id);
               downloadEl.href = "/api/jobs/" + id + "/download";
               downloadEl.removeAttribute("aria-disabled");
               startButton.disabled = false;
-              state.showCompletionPage = true;
-              tabs.forEach((item) => item.classList.remove("active"));
-              renderContent();
+              updatePostGenerationActions(true);
             }
 
             if (type === "error") {
               renderStatus("error", t("generationFailed"));
               source.close();
               startButton.disabled = false;
+              updatePostGenerationActions(true);
               renderContent();
             }
           });
@@ -230,6 +221,15 @@ export function workbenchClientScript(i18nJson: string): string {
         statusPill.textContent = status;
         statusPill.className = "status-pill " + (status === "complete" || status === "error" ? status : "");
         formHint.textContent = status === "error" ? t("hintError") : t("hint");
+        if (status !== "complete" && status !== "error") {
+          updatePostGenerationActions(false);
+        }
+      }
+
+      function updatePostGenerationActions(visible) {
+        if (backHomeButton) {
+          backHomeButton.hidden = !visible;
+        }
       }
 
       function appendEvent(event) {
@@ -242,12 +242,6 @@ export function workbenchClientScript(i18nJson: string): string {
       }
 
       function renderContent() {
-        if (state.showCompletionPage && shell.dataset.status === "complete") {
-          contentEl.innerHTML = renderCompletionPage();
-          bindCompletionPageActions();
-          return;
-        }
-
         if (!state.resources) {
           contentEl.innerHTML = renderPending();
           return;
@@ -262,37 +256,11 @@ export function workbenchClientScript(i18nJson: string): string {
         contentEl.innerHTML = renderers[state.activeTab]();
       }
 
-      function renderCompletionPage() {
-        const repoName = state.resources?.repository?.fullName || state.job?.repoUrl || "";
-        return '<section class="completion-page">' +
-          '<h2>' + escapeHtml(t("completionTitle")) + '</h2>' +
-          '<p>' + escapeHtml(t("completionBody")) + '</p>' +
-          (repoName ? '<p class="empty">' + escapeHtml(repoName) + '</p>' : "") +
-          '<div class="completion-actions">' +
-          '<button type="button" class="secondary-button" id="completion-preview-button">' + escapeHtml(t("viewPreview")) + '</button>' +
-          '<a class="secondary-button" id="completion-download-button" href="' + escapeAttribute(downloadEl.href) + '">' + escapeHtml(t("downloadZip")) + '</a>' +
-          '<button type="button" class="secondary-button" id="back-home-button">' + escapeHtml(t("backToHome")) + '</button>' +
-          '</div></section>';
-      }
-
-      function bindCompletionPageActions() {
-        const previewButton = contentEl.querySelector("#completion-preview-button");
-        const backHomeButton = contentEl.querySelector("#back-home-button");
-        previewButton?.addEventListener("click", () => {
-          state.showCompletionPage = false;
-          state.activeTab = "preview";
-          tabs.forEach((item) => item.classList.toggle("active", item.dataset.tab === "preview"));
-          renderContent();
-        });
-        backHomeButton?.addEventListener("click", () => resetToHome());
-      }
-
       function resetToHome() {
         renderMode("idle");
         shell.dataset.status = "idle";
         state.job = null;
         state.resources = null;
-        state.showCompletionPage = false;
         state.activeTab = "overview";
         timelineEl.innerHTML = "";
         statusEl.textContent = t("statusWaiting");
@@ -302,6 +270,7 @@ export function workbenchClientScript(i18nJson: string): string {
         downloadEl.setAttribute("aria-disabled", "true");
         downloadEl.href = "#";
         startButton.disabled = false;
+        updatePostGenerationActions(false);
         tabs.forEach((item) => item.classList.toggle("active", item.dataset.tab === "overview"));
         renderContent();
         window.scrollTo({ top: 0, behavior: "smooth" });

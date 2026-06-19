@@ -141,6 +141,7 @@ export function workbenchTemplate(styles: string, clientScript: string): string 
             <div id="timeline" class="timeline"></div>
             <div class="actions">
               <a id="download" class="download" href="#" aria-disabled="true" data-i18n="downloadZip">Download ZIP</a>
+              <button type="button" id="back-home-button" class="secondary-button back-home-button" hidden data-i18n="backToHome">Back to home</button>
             </div>
           </div>
         </section>

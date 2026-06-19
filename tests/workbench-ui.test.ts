@@ -54,8 +54,8 @@ describe("workbenchHtml", () => {
     expect(workbenchStyles()).toContain("--bg:");
     expect(workbenchClientScript("{}")).toContain("collectGenerationOptions");
     expect(workbenchClientScript("{}")).toContain("applyLocale");
-    expect(workbenchClientScript("{}")).toContain("renderCompletionPage");
     expect(workbenchClientScript("{}")).toContain("resetToHome");
-    expect(workbenchClientScript("{}")).toContain("backToHome");
+    expect(workbenchClientScript("{}")).toContain("back-home-button");
+    expect(workbenchHtml()).toContain('id="back-home-button"');
   });
 });
