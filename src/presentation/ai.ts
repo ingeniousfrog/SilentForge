@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
-import type { PresentationPlan, SiteModel } from "../types.js";
+import type { PresentationGenerationOptions, PresentationPlan, SiteModel } from "../types.js";
 import { buildPresentationPlan, validatePresentationPlan } from "./plan.js";
 
 const sourceRefSchema = z.enum([
@@ -70,19 +70,20 @@ export type PresentationPlanningOptions = {
   readonly useAi?: boolean;
   readonly aiPlanner?: AiPlanner;
   readonly onFallback?: (message: string) => void;
+  readonly generationOptions?: PresentationGenerationOptions;
 };
 
 export async function createPresentationPlan(
   model: SiteModel,
   options: PresentationPlanningOptions = {}
 ): Promise<PresentationPlan> {
-  const fallback = buildPresentationPlan(model);
+  const fallback = buildPresentationPlan(model, options.generationOptions);
   if (!options.useAi) return fallback;
 
   try {
     const planner = options.aiPlanner ?? requestOpenAiPlan;
     const plan = await planner(model, fallback);
-    return validatePresentationPlan({ ...plan, plannedBy: "openai" }, model);
+    return validatePresentationPlan({ ...plan, plannedBy: "openai" }, model, options.generationOptions);
   } catch (error) {
     options.onFallback?.(error instanceof Error ? error.message : "OpenAI planning failed");
     return fallback;

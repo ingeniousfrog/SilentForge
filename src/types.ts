@@ -130,6 +130,7 @@ export type SiteModel = {
   readonly screenshots: readonly ReadmeImage[];
   readonly knowledgeBase: CodeKnowledgeBase;
   readonly profile: ProjectProfile;
+  readonly diagnostics: RepositoryDiagnostics;
   readonly generatedAt: string;
 };
 
@@ -171,10 +172,38 @@ export type PresentationPlan = {
   readonly plannedBy: "rules" | "openai";
 };
 
+export type PresentationGenerationOptions = {
+  readonly mode?: PresentationMode | "auto";
+  readonly theme?: PresentationTheme | "auto";
+  readonly enabledChapters?: readonly PresentationChapterKind[];
+};
+
 export type ProjectProfile = {
   readonly richnessScore: number;
   readonly hasVisualStory: boolean;
   readonly hasDeveloperJourney: boolean;
   readonly hasArchitectureDepth: boolean;
   readonly readmeInsightCount: number;
+};
+
+export type DiagnosticDimensionId = "readme" | "visuals" | "developerJourney" | "architecture" | "release";
+
+export type DiagnosticDimension = {
+  readonly id: DiagnosticDimensionId;
+  readonly label: string;
+  readonly score: number;
+  readonly maxScore: number;
+  readonly strengths: readonly string[];
+  readonly gaps: readonly string[];
+  readonly recommendations: readonly string[];
+};
+
+export type RepositoryDiagnostics = {
+  readonly score: number;
+  readonly maxScore: number;
+  readonly grade: "ready" | "solid" | "needs-work";
+  readonly strengths: readonly string[];
+  readonly gaps: readonly string[];
+  readonly recommendations: readonly string[];
+  readonly dimensions: readonly DiagnosticDimension[];
 };

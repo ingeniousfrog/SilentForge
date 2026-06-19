@@ -23,7 +23,18 @@ export type WorkbenchServer = {
 
 const createJobSchema = z.object({
   repoUrl: z.string().trim().min(1).max(500),
-  useAi: z.boolean().optional().default(false)
+  useAi: z.boolean().optional().default(false),
+  generationOptions: z
+    .object({
+      mode: z.enum(["auto", "visual-showcase", "developer-deck", "architecture-map", "compact-story"]).optional(),
+      theme: z.enum(["auto", "signal-dark", "editorial-light", "blueprint"]).optional(),
+      enabledChapters: z
+        .array(
+          z.enum(["features", "visuals", "usage", "readme-insights", "technology", "architecture", "resources"])
+        )
+        .optional()
+    })
+    .optional()
 });
 
 export async function startWorkbenchServer(options: WorkbenchServerOptions = {}): Promise<WorkbenchServer> {
@@ -76,7 +87,11 @@ async function handleRequest(store: JobStore, request: IncomingMessage, response
       return;
     }
 
-    const job = await store.create(parsedPayload.data.repoUrl, parsedPayload.data.useAi);
+    const job = await store.create(
+      parsedPayload.data.repoUrl,
+      parsedPayload.data.useAi,
+      parsedPayload.data.generationOptions
+    );
     queueMicrotask(() => {
       void runGenerationJob(store, job);
     });

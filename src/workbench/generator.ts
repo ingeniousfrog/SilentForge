@@ -21,6 +21,7 @@ export async function runGenerationJob(store: JobStore, job: WorkbenchJob): Prom
     store.pushEvent(job.id, "step", "Building lightweight code knowledge base and Mermaid structure map.");
     const presentationPlan = await createPresentationPlan(model, {
       useAi: job.useAi,
+      generationOptions: job.generationOptions,
       onFallback: (message) => store.pushEvent(job.id, "step", `AI structure unavailable: ${message}`)
     });
     store.pushEvent(

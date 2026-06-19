@@ -2,6 +2,7 @@ import type { ReadmeImage, RepositorySnapshot, SiteModel } from "../types.js";
 import { analyzeCodebase } from "../analyzer/codebase.js";
 import { parseReadme } from "../readme/parser.js";
 import { selectReadmeInsights } from "../presentation/readme.js";
+import { evaluateRepositoryDiagnostics } from "./diagnostics.js";
 
 const screenshotPathPattern = /(^|\/)(screenshots?|images?|assets?)\/.*\.(png|jpe?g|gif|webp)$/i;
 
@@ -25,7 +26,7 @@ export function createSiteModel(snapshot: RepositorySnapshot, generatedAt = new 
 
   const screenshots = mergeScreenshots(readme.screenshots, repositoryScreenshots);
 
-  return {
+  const model = {
     repository: snapshot.metadata,
     readme,
     releases: snapshot.releases,
@@ -33,6 +34,11 @@ export function createSiteModel(snapshot: RepositorySnapshot, generatedAt = new 
     knowledgeBase: analyzeCodebase(snapshot.files, readme),
     profile: createProjectProfile(snapshot, readme, screenshots.length),
     generatedAt: generatedAt.toISOString()
+  };
+
+  return {
+    ...model,
+    diagnostics: evaluateRepositoryDiagnostics(model)
   };
 }
 

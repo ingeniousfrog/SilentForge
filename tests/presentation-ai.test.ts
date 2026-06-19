@@ -44,6 +44,15 @@ const sparseModel = {
     hasArchitectureDepth: false,
     readmeInsightCount: 0
   },
+  diagnostics: {
+    score: 20,
+    maxScore: 100,
+    grade: "needs-work",
+    strengths: [],
+    gaps: [],
+    recommendations: [],
+    dimensions: []
+  },
   generatedAt: "2026-06-18T00:00:00.000Z"
 } satisfies SiteModel;
 
@@ -64,5 +73,23 @@ describe("createPresentationPlan", () => {
     });
     expect(result).toEqual(buildPresentationPlan(sparseModel));
     expect(onFallback).toHaveBeenCalledWith("timeout");
+  });
+
+  it("applies user generation options to deterministic fallback planning", async () => {
+    const planner = vi.fn();
+    const result = await createPresentationPlan(sparseModel, {
+      useAi: false,
+      aiPlanner: planner,
+      generationOptions: {
+        mode: "architecture-map",
+        theme: "blueprint",
+        enabledChapters: []
+      }
+    });
+
+    expect(result.mode).toBe("architecture-map");
+    expect(result.theme).toBe("blueprint");
+    expect(result.chapters.map((chapter) => chapter.kind)).toEqual(["hero"]);
+    expect(planner).not.toHaveBeenCalled();
   });
 });

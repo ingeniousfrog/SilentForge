@@ -6,6 +6,7 @@ export type ResourceView = {
   readonly releases: SiteModel["releases"];
   readonly screenshots: SiteModel["screenshots"];
   readonly knowledgeBase: SiteModel["knowledgeBase"];
+  readonly diagnostics: SiteModel["diagnostics"];
   readonly files: readonly {
     readonly path: string;
     readonly type: string;
@@ -25,6 +26,7 @@ export function createResourceView(snapshot: RepositorySnapshot, model: SiteMode
     releases: model.releases,
     screenshots: model.screenshots,
     knowledgeBase: model.knowledgeBase,
+    diagnostics: model.diagnostics,
     files: snapshot.files.map((file) => ({
       path: file.path,
       type: file.type,

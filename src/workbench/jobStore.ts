@@ -1,7 +1,7 @@
-import { mkdtemp } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdtemp, rm } from "node:fs/promises";
+import { basename, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
-import type { RepositorySnapshot, SiteModel } from "../types.js";
+import type { PresentationGenerationOptions, RepositorySnapshot, SiteModel } from "../types.js";
 
 export type JobStatus = "queued" | "running" | "complete" | "failed";
 
@@ -16,9 +16,11 @@ export type WorkbenchJob = {
   readonly id: string;
   readonly repoUrl: string;
   readonly useAi: boolean;
+  readonly generationOptions: PresentationGenerationOptions;
   readonly status: JobStatus;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly completedAt?: string;
   readonly workspaceDir: string;
   readonly outputDir: string;
   readonly events: readonly JobEvent[];
@@ -33,16 +35,36 @@ export type PublicJob = {
   readonly status: JobStatus;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly completedAt?: string;
   readonly events: readonly JobEvent[];
   readonly error?: string;
   readonly hasSnapshot: boolean;
   readonly hasModel: boolean;
+  readonly generationOptions: PresentationGenerationOptions;
 };
 
-export class JobStore {
-  readonly #jobs = new Map<string, WorkbenchJob>();
+export type JobStoreOptions = {
+  readonly maxJobs?: number;
+  readonly cleanupWorkspace?: (workspaceDir: string) => Promise<void>;
+};
 
-  async create(repoUrl: string, useAi = false): Promise<WorkbenchJob> {
+const defaultMaxJobs = 20;
+
+export class JobStore {
+  #jobs = new Map<string, WorkbenchJob>();
+  readonly #maxJobs: number;
+  readonly #cleanupWorkspace: (workspaceDir: string) => Promise<void>;
+
+  constructor(options: JobStoreOptions = {}) {
+    this.#maxJobs = options.maxJobs ?? defaultMaxJobs;
+    this.#cleanupWorkspace = options.cleanupWorkspace ?? cleanupWorkbenchWorkspace;
+  }
+
+  async create(
+    repoUrl: string,
+    useAi = false,
+    generationOptions: PresentationGenerationOptions = {}
+  ): Promise<WorkbenchJob> {
     const id = createJobId();
     const workspaceDir = await mkdtemp(join(tmpdir(), "reposite-workbench-"));
     const now = new Date().toISOString();
@@ -50,6 +72,7 @@ export class JobStore {
       id,
       repoUrl,
       useAi,
+      generationOptions,
       status: "queued",
       createdAt: now,
       updatedAt: now,
@@ -58,7 +81,9 @@ export class JobStore {
       events: []
     };
 
-    this.#jobs.set(id, job);
+    const { jobs, evicted } = trimJobs(new Map([...this.#jobs, [id, job]]), this.#maxJobs);
+    this.#jobs = jobs;
+    await Promise.allSettled(evicted.map((evictedJob) => this.#cleanupWorkspace(evictedJob.workspaceDir)));
     return job;
   }
 
@@ -84,12 +109,14 @@ export class JobStore {
 
   patch(id: string, patch: Partial<Omit<WorkbenchJob, "id" | "createdAt">>): WorkbenchJob {
     const job = this.require(id);
+    const now = new Date().toISOString();
     const nextJob: WorkbenchJob = {
       ...job,
       ...patch,
-      updatedAt: new Date().toISOString()
+      completedAt: patch.completedAt ?? (isTerminalStatus(patch.status) && !job.completedAt ? now : job.completedAt),
+      updatedAt: now
     };
-    this.#jobs.set(id, nextJob);
+    this.#jobs = new Map([...this.#jobs, [id, nextJob]]);
     return nextJob;
   }
 
@@ -109,11 +136,49 @@ export function toPublicJob(job: WorkbenchJob): PublicJob {
     status: job.status,
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
+    completedAt: job.completedAt,
     events: job.events,
     error: job.error,
     hasSnapshot: Boolean(job.snapshot),
-    hasModel: Boolean(job.model)
+    hasModel: Boolean(job.model),
+    generationOptions: job.generationOptions
   };
+}
+
+function trimJobs(
+  jobs: ReadonlyMap<string, WorkbenchJob>,
+  maxJobs: number
+): { readonly jobs: Map<string, WorkbenchJob>; readonly evicted: readonly WorkbenchJob[] } {
+  const entries = [...jobs.entries()];
+  const removeCount = Math.max(entries.length - maxJobs, 0);
+  const evicted = entries.slice(0, removeCount).map(([, job]) => job);
+  return {
+    jobs: new Map(entries.slice(removeCount)),
+    evicted
+  };
+}
+
+function isTerminalStatus(status: JobStatus | undefined): boolean {
+  return status === "complete" || status === "failed";
+}
+
+async function cleanupWorkbenchWorkspace(workspaceDir: string): Promise<void> {
+  if (!isSafeWorkbenchWorkspace(workspaceDir)) {
+    return;
+  }
+  await rm(workspaceDir, { recursive: true, force: true });
+}
+
+function isSafeWorkbenchWorkspace(workspaceDir: string): boolean {
+  const tempRoot = resolve(tmpdir());
+  const target = resolve(workspaceDir);
+  const relativePath = relative(tempRoot, target);
+  return (
+    relativePath.length > 0 &&
+    !relativePath.startsWith("..") &&
+    !relativePath.startsWith("/") &&
+    basename(target).startsWith("reposite-workbench-")
+  );
 }
 
 function createJobId(): string {

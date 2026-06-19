@@ -75,11 +75,21 @@ describe("createResourceView", () => {
         hasDeveloperJourney: false,
         hasArchitectureDepth: false,
         readmeInsightCount: 0
+      },
+      diagnostics: {
+        score: 22,
+        maxScore: 100,
+        grade: "needs-work",
+        strengths: ["README title is present."],
+        gaps: ["README is missing a summary."],
+        recommendations: ["Add a concise README summary."],
+        dimensions: []
       }
     };
 
     expect(createResourceView(snapshot, model).files).toEqual([{ path: "package.json", type: "blob", size: 12 }]);
     expect(createResourceView(snapshot, model).knowledgeBase.fileTypeDistribution).toEqual([{ label: ".json", count: 1 }]);
+    expect(createResourceView(snapshot, model).diagnostics.score).toBe(22);
     expect(JSON.stringify(createResourceView(snapshot, model))).not.toContain("secret-url");
   });
 });

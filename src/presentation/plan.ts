@@ -2,6 +2,7 @@ import type {
   PresentationChapter,
   PresentationChapterKind,
   PresentationDetailPage,
+  PresentationGenerationOptions,
   PresentationPlan,
   PresentationTheme,
   SiteModel
@@ -35,24 +36,53 @@ const allowedSourceRefs = new Set([
 
 const maxChapterSummaryLength = 240;
 
-export function buildPresentationPlan(model: SiteModel): PresentationPlan {
-  const mode = selectMode(model);
-  const theme = selectTheme(mode);
+export function buildPresentationPlan(
+  model: SiteModel,
+  generationOptions: PresentationGenerationOptions = {}
+): PresentationPlan {
+  const mode = selectMode(model, generationOptions);
+  const theme = selectTheme(mode, generationOptions);
   const chapters = chapterCandidates(model)
     .filter((chapter) => chapter.available)
+    .filter((chapter) => isChapterEnabled(chapter.kind, generationOptions))
     .slice(0, mode === "compact-story" ? 4 : 8)
     .map(({ available: _available, ...chapter }) => chapter);
+  const details = detailPages(model, generationOptions);
+  const detailIds = new Set(details.map((page) => page.id));
 
   return {
     mode,
     theme,
-    chapters,
-    detailPages: detailPages(model),
+    chapters: chapters.map((chapter) => ({
+      ...chapter,
+      verticalDetails: chapter.verticalDetails.filter((id) => detailIds.has(id as PresentationDetailPage["id"]))
+    })),
+    detailPages: details,
     plannedBy: "rules"
   };
 }
 
-export function validatePresentationPlan(plan: PresentationPlan, model: SiteModel): PresentationPlan {
+export function validatePresentationPlan(
+  plan: PresentationPlan,
+  model: SiteModel,
+  generationOptions: PresentationGenerationOptions = {}
+): PresentationPlan {
+  validatePresentationPlanShape(plan, model);
+  const constrainedPlan = constrainPresentationPlan(plan, model, generationOptions);
+  validatePresentationPlanShape(constrainedPlan, model, generationOptions);
+
+  return {
+    ...constrainedPlan,
+    chapters: constrainedPlan.chapters.map((chapter) => ({ ...chapter, sourceRefs: [...chapter.sourceRefs] })),
+    detailPages: constrainedPlan.detailPages.map((page) => ({ ...page, sourceRefs: [...page.sourceRefs] }))
+  };
+}
+
+function validatePresentationPlanShape(
+  plan: PresentationPlan,
+  model: SiteModel,
+  generationOptions: PresentationGenerationOptions = {}
+): void {
   if (plan.chapters.length === 0 || plan.chapters.length > 8) {
     throw new Error("Presentation plan must contain between 1 and 8 chapters.");
   }
@@ -87,7 +117,7 @@ export function validatePresentationPlan(plan: PresentationPlan, model: SiteMode
     validateSourceRefs(page.sourceRefs);
   });
 
-  const availableDetails = new Set(detailPages(model).map((page) => page.id));
+  const availableDetails = new Set(detailPages(model, generationOptions).map((page) => page.id));
   if (plan.detailPages.some((page) => !availableDetails.has(page.id))) {
     throw new Error("Presentation plan references an unavailable detail page.");
   }
@@ -95,14 +125,12 @@ export function validatePresentationPlan(plan: PresentationPlan, model: SiteMode
     throw new Error("Presentation plan references an unavailable vertical detail.");
   }
 
-  return {
-    ...plan,
-    chapters: plan.chapters.map((chapter) => ({ ...chapter, sourceRefs: [...chapter.sourceRefs] })),
-    detailPages: plan.detailPages.map((page) => ({ ...page, sourceRefs: [...page.sourceRefs] }))
-  };
 }
 
-function selectMode(model: SiteModel): PresentationPlan["mode"] {
+function selectMode(model: SiteModel, generationOptions: PresentationGenerationOptions): PresentationPlan["mode"] {
+  if (generationOptions.mode && generationOptions.mode !== "auto") {
+    return generationOptions.mode;
+  }
   if (model.profile.richnessScore < 4) {
     return "compact-story";
   }
@@ -118,7 +146,10 @@ function selectMode(model: SiteModel): PresentationPlan["mode"] {
   return "developer-deck";
 }
 
-function selectTheme(mode: PresentationPlan["mode"]): PresentationTheme {
+function selectTheme(mode: PresentationPlan["mode"], generationOptions: PresentationGenerationOptions): PresentationTheme {
+  if (generationOptions.theme && generationOptions.theme !== "auto") {
+    return generationOptions.theme;
+  }
   if (mode === "visual-showcase") return "editorial-light";
   if (mode === "architecture-map") return "blueprint";
   return "signal-dark";
@@ -196,7 +227,10 @@ function normalizeSummary(summary: string | undefined): string | undefined {
   return `${normalized.slice(0, maxChapterSummaryLength - 1).trimEnd()}…`;
 }
 
-function detailPages(model: SiteModel): readonly PresentationDetailPage[] {
+function detailPages(
+  model: SiteModel,
+  generationOptions: PresentationGenerationOptions = {}
+): readonly PresentationDetailPage[] {
   return [
     detail("install", "Installation", ["readme.installation"], Boolean(model.readme.installation)),
     detail("usage", "Usage", ["readme.usage"], Boolean(model.readme.usage)),
@@ -208,8 +242,59 @@ function detailPages(model: SiteModel): readonly PresentationDetailPage[] {
     ),
     detail("releases", "Releases", ["releases"], model.releases.length > 0),
     detail("readme", "README sections", ["readme.sections"], model.readme.sections.length > 0)
-  ].filter((page): page is PresentationDetailPage => Boolean(page));
+  ]
+    .filter((page): page is PresentationDetailPage => Boolean(page))
+    .filter((page) => isDetailEnabled(page.id, generationOptions));
 }
+
+function constrainPresentationPlan(
+  plan: PresentationPlan,
+  model: SiteModel,
+  generationOptions: PresentationGenerationOptions
+): PresentationPlan {
+  const mode = selectMode(model, generationOptions);
+  const theme = selectTheme(mode, generationOptions);
+  const detailIds = new Set(detailPages(model, generationOptions).map((page) => page.id));
+  const chapters = plan.chapters
+    .filter((chapter) => isChapterEnabled(chapter.kind, generationOptions))
+    .map((chapter) => ({
+      ...chapter,
+      verticalDetails: chapter.verticalDetails.filter((id) => detailIds.has(id as PresentationDetailPage["id"]))
+    }));
+
+  return {
+    ...plan,
+    mode,
+    theme,
+    chapters,
+    detailPages: plan.detailPages.filter((page) => detailIds.has(page.id))
+  };
+}
+
+function isChapterEnabled(
+  kind: PresentationChapterKind,
+  generationOptions: PresentationGenerationOptions
+): boolean {
+  if (kind === "hero") return true;
+  if (!generationOptions.enabledChapters) return true;
+  return generationOptions.enabledChapters.includes(kind);
+}
+
+function isDetailEnabled(
+  id: PresentationDetailPage["id"],
+  generationOptions: PresentationGenerationOptions
+): boolean {
+  if (!generationOptions.enabledChapters) return true;
+  return generationOptions.enabledChapters.some((kind) => detailChapterMap[id] === kind);
+}
+
+const detailChapterMap: Readonly<Record<PresentationDetailPage["id"], PresentationChapterKind>> = {
+  install: "usage",
+  usage: "usage",
+  architecture: "architecture",
+  releases: "resources",
+  readme: "readme-insights"
+};
 
 function hasArchitectureContent(model: SiteModel): boolean {
   return (

@@ -126,6 +126,25 @@ const createModel = (): SiteModel => ({
     hasDeveloperJourney: true,
     hasArchitectureDepth: true,
     readmeInsightCount: 1
+  },
+  diagnostics: {
+    score: 100,
+    maxScore: 100,
+    grade: "ready",
+    strengths: ["README covers title, summary, features, installation, usage, and FAQ."],
+    gaps: [],
+    recommendations: [],
+    dimensions: [
+      {
+        id: "readme",
+        label: "README coverage",
+        score: 30,
+        maxScore: 30,
+        strengths: ["README covers title, summary, features, installation, usage, and FAQ."],
+        gaps: [],
+        recommendations: []
+      }
+    ]
   }
 });
 
@@ -145,6 +164,7 @@ describe("generateStaticSite", () => {
     await expect(readFile(join(outputDir, "assets/mermaid.js"), "utf8")).resolves.toContain("mermaid");
     await expect(readFile(join(outputDir, "details/architecture.html"), "utf8")).resolves.toContain("Architecture");
     await expect(readFile(join(outputDir, "data/site.json"), "utf8")).resolves.toContain("presentationPlan");
+    await expect(readFile(join(outputDir, "data/site.json"), "utf8")).resolves.toContain("diagnostics");
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('class="mermaid"');
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain(
       'class="insight-diagram mermaid"'

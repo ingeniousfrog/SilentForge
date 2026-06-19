@@ -63,6 +63,15 @@ function model(overrides: Partial<SiteModel> = {}): SiteModel {
       hasArchitectureDepth: false,
       readmeInsightCount: 1
     },
+    diagnostics: {
+      score: 80,
+      maxScore: 100,
+      grade: "solid",
+      strengths: [],
+      gaps: [],
+      recommendations: [],
+      dimensions: []
+    },
     ...overrides
   };
 }
@@ -177,5 +186,55 @@ describe("buildPresentationPlan", () => {
         sparse
       )
     ).toThrow("no repository content");
+  });
+
+  it("applies explicit mode, theme, and chapter options without adding empty chapters", () => {
+    const plan = buildPresentationPlan(
+      model({
+        screenshots: [],
+        knowledgeBase: {
+          ...model().knowledgeBase,
+          configFiles: [
+            { path: "package.json", purpose: "Node.js package manifest and scripts" },
+            { path: "tsconfig.json", purpose: "TypeScript compiler configuration" },
+            { path: "vitest.config.ts", purpose: "Vitest test configuration" }
+          ],
+          directorySummaries: [
+            { path: "src", fileCount: 8, configCount: 0, entryCount: 1, summary: "src contains source files." },
+            { path: "tests", fileCount: 8, configCount: 0, entryCount: 0, summary: "tests contains tests." }
+          ],
+          moduleMap: [
+            { heading: "src", content: "Contains source files." },
+            { heading: "tests", content: "Contains tests." }
+          ]
+        },
+        profile: {
+          richnessScore: 8,
+          hasVisualStory: false,
+          hasDeveloperJourney: true,
+          hasArchitectureDepth: true,
+          readmeInsightCount: 1
+        }
+      }),
+      {
+        mode: "architecture-map",
+        theme: "blueprint",
+        enabledChapters: ["visuals", "technology", "architecture"]
+      }
+    );
+
+    expect(plan.mode).toBe("architecture-map");
+    expect(plan.theme).toBe("blueprint");
+    expect(plan.chapters.map((chapter) => chapter.kind)).toEqual(["hero", "technology", "architecture"]);
+    expect(plan.detailPages.map((page) => page.id)).toEqual(["architecture"]);
+  });
+
+  it("keeps the hero chapter when all optional chapters are disabled", () => {
+    const plan = buildPresentationPlan(model(), {
+      enabledChapters: []
+    });
+
+    expect(plan.chapters.map((chapter) => chapter.kind)).toEqual(["hero"]);
+    expect(plan.detailPages).toEqual([]);
   });
 });

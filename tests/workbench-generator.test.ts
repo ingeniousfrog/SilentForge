@@ -13,7 +13,11 @@ describe("runGenerationJob", () => {
   it("records progress and generates the static presentation", async () => {
     const { runGenerationJob } = await import("../src/workbench/generator.js");
     const store = new JobStore();
-    const job = await store.create("acme/widgetkit");
+    const job = await store.create("acme/widgetkit", false, {
+      mode: "developer-deck",
+      theme: "signal-dark",
+      enabledChapters: ["usage", "technology"]
+    });
     fetchRepositorySnapshot.mockResolvedValue({
       metadata: {
         owner: "acme",
@@ -46,6 +50,13 @@ describe("runGenerationJob", () => {
       expect.objectContaining({ repository: expect.any(Object) }),
       job.outputDir,
       expect.objectContaining({ presentationPlan: expect.any(Object) })
+    );
+    expect(createPresentationPlan).toHaveBeenCalledWith(
+      expect.objectContaining({ repository: expect.any(Object) }),
+      expect.objectContaining({
+        useAi: false,
+        generationOptions: job.generationOptions
+      })
     );
   });
 

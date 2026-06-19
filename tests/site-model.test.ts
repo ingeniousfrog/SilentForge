@@ -40,6 +40,14 @@ describe("createSiteModel", () => {
     expect(model.knowledgeBase.entryFiles).toContain("src/index.ts");
     expect(model.profile.hasVisualStory).toBe(true);
     expect(model.profile.readmeInsightCount).toBeGreaterThan(0);
+    expect(model.diagnostics.score).toBeGreaterThan(0);
+    expect(model.diagnostics.dimensions.map((dimension) => dimension.id)).toEqual([
+      "readme",
+      "visuals",
+      "developerJourney",
+      "architecture",
+      "release"
+    ]);
   });
 
   it("does not treat status badges as presentation screenshots", () => {
