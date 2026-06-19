@@ -3,8 +3,17 @@
   "version": "0.1.0",
   "description": "Forge a GitHub repository into a portable adaptive HTML presentation and code knowledge base.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ingeniousfrog/SilentForge.git"
+  },
+  "homepage": "https://github.com/ingeniousfrog/SilentForge#readme",
+  "bugs": {
+    "url": "https://github.com/ingeniousfrog/SilentForge/issues"
+  },
   "bin": {
-    "reposite": "./dist/cli.js"
+    "reposite": "./dist/cli.js",
+    "silentforge": "./dist/cli.js"
   },
   "files": [
     "dist",

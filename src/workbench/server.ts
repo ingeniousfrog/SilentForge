@@ -5,6 +5,7 @@ import { extname, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { z } from "zod";
 import { parseGitHubRepoUrl } from "../github/url.js";
+import { minGithubTokenLength, normalizeGithubToken } from "../github/token.js";
 import { resolveLocale, t } from "../i18n/index.js";
 import { createZipFromDirectory } from "./archive.js";
 import { runGenerationJob } from "./generator.js";
@@ -22,10 +23,15 @@ export type WorkbenchServer = {
   readonly close: () => Promise<void>;
 };
 
+const optionalGithubTokenSchema = z.preprocess(
+  (value) => normalizeGithubToken(typeof value === "string" ? value : undefined),
+  z.string().min(minGithubTokenLength).max(200).optional()
+);
+
 const createJobSchema = z.object({
   repoUrl: z.string().trim().min(1).max(500),
   useAi: z.boolean().optional().default(false),
-  githubToken: z.string().trim().min(1).max(200).optional(),
+  githubToken: optionalGithubTokenSchema,
   generationOptions: z
     .object({
       mode: z.enum(["auto", "visual-showcase", "developer-deck", "architecture-map", "compact-story"]).optional(),

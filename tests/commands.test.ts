@@ -42,11 +42,11 @@ describe("initRepoSite", () => {
     const result = await initRepoSite("acme/widgetkit", {
       cwd: "/tmp/work",
       outputDir: "site",
-      token: "token",
+      token: "ghp_valid_test_token",
       generationOptions: { locale: "zh", theme: "blueprint", enabledChapters: ["features", "usage"] }
     });
 
-    expect(fetchRepositorySnapshot).toHaveBeenCalledWith("acme/widgetkit", { token: "token" });
+    expect(fetchRepositorySnapshot).toHaveBeenCalledWith("acme/widgetkit", { token: "ghp_valid_test_token" });
     expect(createPresentationPlan).toHaveBeenCalledWith(
       expect.objectContaining({ repository: expect.any(Object) }),
       expect.objectContaining({

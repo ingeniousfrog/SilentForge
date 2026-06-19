@@ -2,6 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { basename, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import type { PresentationGenerationOptions, RepositorySnapshot, SiteModel } from "../types.js";
+import { normalizeGithubToken } from "../github/token.js";
 
 export type JobStatus = "queued" | "running" | "complete" | "failed";
 
@@ -70,11 +71,12 @@ export class JobStore {
     const id = createJobId();
     const workspaceDir = await mkdtemp(join(tmpdir(), "reposite-workbench-"));
     const now = new Date().toISOString();
+    const normalizedToken = normalizeGithubToken(githubToken);
     const job: WorkbenchJob = {
       id,
       repoUrl,
       useAi,
-      ...(githubToken ? { githubToken } : {}),
+      ...(normalizedToken ? { githubToken: normalizedToken } : {}),
       generationOptions,
       status: "queued",
       createdAt: now,

@@ -23,10 +23,17 @@ describe("JobStore", () => {
 
   it("stores github tokens on jobs without exposing them publicly", async () => {
     const store = new JobStore();
-    const job = await store.create("acme/widgetkit", false, {}, "ghp_test_token");
+    const job = await store.create("acme/widgetkit", false, {}, "ghp_valid_test_token");
 
-    expect(job.githubToken).toBe("ghp_test_token");
+    expect(job.githubToken).toBe("ghp_valid_test_token");
     expect(store.publicJob(job.id)).not.toHaveProperty("githubToken");
+  });
+
+  it("drops github tokens that are too short", async () => {
+    const store = new JobStore();
+    const job = await store.create("acme/widgetkit", false, {}, "ghp_short");
+
+    expect(job.githubToken).toBeUndefined();
   });
 
   it("stores generation options and exposes completion timestamps publicly", async () => {

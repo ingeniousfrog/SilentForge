@@ -189,26 +189,30 @@ ${workbenchShellCss()}
         font-size: 0.8125rem;
         text-align: center;
       }
-      .github-auth {
+      .workbench-settings {
         border: 0;
         border-radius: var(--radius-md);
         background: transparent;
       }
-      .github-auth > summary {
+      .workbench-settings > summary {
         list-style: none;
         cursor: pointer;
         color: var(--muted);
         font-size: 0.8125rem;
         font-weight: 500;
       }
-      .github-auth > summary::-webkit-details-marker {
+      .workbench-settings > summary::-webkit-details-marker {
         display: none;
       }
-      .github-auth-summary {
+      .workbench-settings-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
         position: relative;
         padding-right: 18px;
       }
-      .github-auth-summary::after {
+      .workbench-settings-summary::after {
         position: absolute;
         top: 50%;
         right: 0;
@@ -218,13 +222,68 @@ ${workbenchShellCss()}
         content: "›";
         transition: transform 160ms ease;
       }
-      .github-auth[open] > .github-auth-summary::after {
+      .workbench-settings[open] > .workbench-settings-summary::after {
         transform: translateY(-50%) rotate(90deg);
       }
-      .github-auth-body {
+      .settings-summary {
+        color: var(--dim);
+        font-size: 0.75rem;
+        font-weight: 400;
+      }
+      .workbench-settings-body {
+        display: grid;
+        gap: var(--space-2);
+        padding-top: 12px;
+      }
+      .settings-section {
         display: grid;
         gap: 10px;
-        padding-top: 10px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+      }
+      .settings-section:first-child {
+        padding-top: 0;
+        border-top: 0;
+      }
+      .settings-section-heading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .settings-section-title {
+        margin: 0;
+        color: var(--text);
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+      .settings-section-lead {
+        margin: 0;
+        color: var(--dim);
+        font-size: 0.75rem;
+        line-height: 1.5;
+      }
+      .settings-actions {
+        display: grid;
+        gap: 8px;
+        padding-top: 4px;
+      }
+      .settings-save {
+        min-height: 40px;
+        width: fit-content;
+      }
+      .settings-save-hint {
+        margin: 0;
+        color: var(--cyan);
+        font-size: 0.8125rem;
+      }
+      .settings-save-hint[hidden] {
+        display: none;
+      }
+      .settings-save-note {
+        margin: 0;
+        color: var(--dim);
+        font-size: 0.75rem;
+        line-height: 1.5;
       }
       .github-token-field {
         display: grid;
@@ -259,12 +318,6 @@ ${workbenchShellCss()}
         padding: 0;
         accent-color: var(--cyan);
       }
-      .token-hint {
-        margin: 0;
-        color: var(--dim);
-        font-size: 0.75rem;
-        line-height: 1.5;
-      }
       .ai-option {
         display: flex;
         gap: 10px;
@@ -294,80 +347,8 @@ ${workbenchShellCss()}
         border-radius: var(--radius-md);
         background: var(--surface);
       }
-      .output-settings {
-        border: 0;
-        border-radius: var(--radius-md);
-        background: transparent;
-        box-shadow: none;
-      }
-      .output-settings > summary {
-        list-style: none;
-        cursor: pointer;
-      }
-      .output-settings > summary::-webkit-details-marker {
-        display: none;
-      }
-      .output-settings-summary {
-        position: relative;
-        padding-right: 24px;
-      }
-      .output-settings-summary::after {
-        position: absolute;
-        top: 50%;
-        right: 0;
-        color: var(--muted);
-        font-size: 0.875rem;
-        transform: translateY(-50%);
-        content: "›";
-        transition: transform 160ms ease;
-      }
-      .output-settings[open] > .output-settings-summary::after {
-        transform: translateY(-50%) rotate(90deg);
-      }
-      .output-settings-header {
-        padding: 8px 0;
-      }
-      .output-settings[open] .output-settings-header {
-        padding-bottom: 4px;
-        border-bottom: 1px solid var(--line);
-      }
-      .output-settings .generation-options {
-        padding: var(--space-2) 0 0;
-      }
-      .output-settings-copy {
-        display: grid;
-        gap: 4px;
-      }
-      .output-settings-badge {
-        display: inline-flex;
-        width: fit-content;
-        padding: 2px 8px;
-        border: 1px solid var(--line);
-        border-radius: var(--radius-pill);
-        background: transparent;
-        color: var(--muted);
-        font-size: 0.6875rem;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
-      }
-      .output-settings-title-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .output-settings-title {
-        margin: 0;
-        color: var(--text);
-        font-size: 0.9375rem;
-        font-weight: 500;
-        letter-spacing: -0.01em;
-      }
-      .output-settings-lead {
-        margin: 0;
-        max-width: 52rem;
-        color: var(--dim);
-        font-size: 0.8125rem;
-        line-height: 1.5;
+      .workbench-settings .generation-options {
+        padding-top: 4px;
       }
       .info-tip {
         position: relative;
@@ -425,13 +406,13 @@ ${workbenchShellCss()}
         pointer-events: auto;
         transform: translate(-50%, 0);
       }
-      .output-settings-header .info-tip .info-tooltip {
+      .settings-section-heading .info-tip .info-tooltip {
         left: auto;
         right: 0;
         transform: translate(0, -4px);
       }
-      .output-settings-header .info-tip:hover .info-tooltip,
-      .output-settings-header .info-tip:focus-within .info-tooltip {
+      .settings-section-heading .info-tip:hover .info-tooltip,
+      .settings-section-heading .info-tip:focus-within .info-tooltip {
         transform: translate(0, 0);
       }
       .option-label-row,
@@ -579,9 +560,7 @@ ${workbenchShellCss()}
         display: none;
       }
       .shell[data-mode="active"] .history,
-      .shell[data-mode="active"] .output-settings,
-      .shell[data-mode="active"] .github-auth,
-      .shell[data-mode="active"] .ai-option,
+      .shell[data-mode="active"] .workbench-settings,
       .shell[data-mode="active"] .hint {
         display: none;
       }
@@ -699,6 +678,87 @@ ${workbenchShellCss()}
       .download {
         min-height: 44px;
         width: 100%;
+      }
+      .deploy-guide {
+        margin-top: var(--space-2);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+      }
+      .deploy-guide[hidden] {
+        display: none;
+      }
+      .deploy-guide > summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 12px 14px;
+        font-weight: 500;
+      }
+      .deploy-guide > summary::-webkit-details-marker {
+        display: none;
+      }
+      .deploy-guide-body {
+        padding: 0 14px 14px;
+      }
+      .deploy-guide-lead {
+        margin: 0 0 12px;
+        color: var(--dim);
+        font-size: 0.8125rem;
+        line-height: 1.5;
+      }
+      .deploy-commands {
+        display: grid;
+        gap: 12px;
+      }
+      .deploy-block {
+        display: grid;
+        gap: 8px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--bg);
+      }
+      .deploy-block-header strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+      .deploy-block-header p {
+        margin: 0;
+        color: var(--dim);
+        font-size: 0.8125rem;
+        line-height: 1.5;
+      }
+      .deploy-command {
+        margin: 0;
+        padding: 10px 12px;
+        overflow-x: auto;
+        border-radius: var(--radius-sm);
+        background: rgba(0, 0, 0, 0.18);
+        color: var(--text);
+        font: 0.75rem/1.5 var(--mono);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .creator-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .creator-actions-label {
+        color: var(--muted);
+        font-size: 0.75rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+      }
+      .copy-button {
+        min-height: 32px;
+        padding: 0 12px;
+        font-size: 0.75rem;
+      }
+      .diagnostics-panel {
+        margin-bottom: var(--space-3);
       }
       .tabs {
         display: flex;

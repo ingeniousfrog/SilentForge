@@ -83,6 +83,22 @@ export async function fetchRepositorySnapshot(
   };
 }
 
+function formatGitHubError(status: number, url: string): string {
+  if (status === 401) {
+    return "GitHub rejected the personal access token (401). Clear the token field or provide a valid token.";
+  }
+  if (status === 403) {
+    return "GitHub API rate limit or access denied (403). Add a personal access token in Workbench or set GITHUB_TOKEN, then retry.";
+  }
+  if (status === 404) {
+    return "GitHub repository or resource not found (404). Check that the repository is public and the URL is correct.";
+  }
+  if (status === 429) {
+    return "GitHub API rate limit exceeded (429). Wait a few minutes or add a personal access token, then retry.";
+  }
+  return `GitHub request failed (${status}) for ${url}`;
+}
+
 function createFetchJson(options: GitHubClientOptions): (url: string) => Promise<unknown> {
   const fetchImpl = options.fetchImpl ?? fetch;
 
@@ -96,7 +112,7 @@ function createFetchJson(options: GitHubClientOptions): (url: string) => Promise
     });
 
     if (!response.ok) {
-      throw new Error(`GitHub request failed (${response.status}) for ${url}`);
+      throw new Error(formatGitHubError(response.status, url));
     }
 
     return response.json();

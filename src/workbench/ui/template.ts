@@ -40,129 +40,134 @@ export function workbenchTemplate(styles: string, clientScript: string): string 
       <section class="hero">
         <div class="search-console">
           <h1 data-i18n="heroTitle">Turn a GitHub repository into a static presentation site.</h1>
-          <form id="repo-form" class="repo-form">
+          <div id="repo-console" class="repo-form">
             <div class="search-pill">
               <div class="search-row">
                 <label class="search-field">
-                  <input id="repo-url" name="repoUrl" placeholder="https://github.com/openai/openai-node" autocomplete="off" />
+                  <input id="repo-url" placeholder="https://github.com/openai/openai-node" autocomplete="off" />
                 </label>
-                <button id="start-button" class="primary-button" type="submit" data-i18n="generate">Generate</button>
+                <button id="start-button" class="primary-button" type="button" data-i18n="generate">Generate</button>
               </div>
             </div>
             <p class="hint" id="form-hint" data-i18n="hint">Paste a public GitHub repository URL or owner/repo shorthand.</p>
-            <details class="github-auth" id="github-auth">
-              <summary class="github-auth-summary" data-i18n="githubAuthTitle">GitHub access (optional)</summary>
-              <div class="github-auth-body">
-                <label class="github-token-field">
-                  <span data-i18n="githubTokenLabel">Personal access token</span>
-                  <input
-                    id="github-token"
-                    name="githubToken"
-                    type="password"
-                    autocomplete="off"
-                    spellcheck="false"
-                    data-i18n-placeholder="githubTokenPlaceholder"
-                    placeholder="ghp_…"
-                  />
-                </label>
-                <label class="remember-token">
-                  <input id="remember-github-token" type="checkbox" />
-                  <span data-i18n="rememberGithubToken">Remember on this device</span>
-                </label>
-                <p class="token-hint" data-i18n="githubTokenHint">
-                  Raises GitHub API rate limits when fetching repository metadata, README, releases, and file trees. Sent only to your local Workbench server—not to SilentForge or third parties.
-                </p>
-              </div>
-            </details>
-            <label class="ai-option">
-              <input id="use-ai" type="checkbox" />
-              <span><strong data-i18n="aiTitle">AI-assisted structure.</strong> <span data-i18n="aiBody">When enabled, extracted repository information is sent to OpenAI to arrange the presentation. Repository facts remain source-bound, and failures fall back to local rules.</span></span>
-            </label>
-            <details class="output-settings" id="output-settings">
-              <summary class="output-settings-summary">
-                <div class="output-settings-header">
-                  <div class="output-settings-copy">
-                    <span class="output-settings-badge" data-i18n="outputBadge">Generated site</span>
-                    <div class="output-settings-title-row">
-                      <h2 class="output-settings-title" data-i18n="outputTitle">Output settings</h2>
-                      <span class="info-tip">
-                        <button type="button" class="info-button" aria-label="What do output settings control?" data-i18n-aria="outputInfoAria">i</button>
-                        <span class="info-tooltip" role="tooltip" data-i18n="outputInfo">
-                          These options shape the static site files SilentForge generates: index.html, detail pages, Preview, and ZIP download.
-                          They do not change this Workbench interface.
-                          Mode controls narrative structure. Theme controls colors and typography on every generated page.
-                          Chapter toggles include or omit sections when the repository has matching content.
+            <details class="workbench-settings" id="workbench-settings">
+              <summary class="workbench-settings-summary">
+                <span data-i18n="settingsTitle">Settings</span>
+                <span class="settings-summary" id="settings-summary" aria-live="polite"></span>
+              </summary>
+              <div class="workbench-settings-body">
+                <section class="settings-section">
+                  <h2 class="settings-section-title" data-i18n="githubAuthTitle">GitHub access (optional)</h2>
+                  <p class="settings-section-lead" data-i18n="githubTokenHint">
+                    Raises GitHub API rate limits when fetching repository metadata, README, releases, and file trees. Sent only to your local Workbench server—not to SilentForge or third parties.
+                  </p>
+                  <label class="github-token-field">
+                    <span data-i18n="githubTokenLabel">Personal access token</span>
+                    <input
+                      id="github-token"
+                      type="password"
+                      autocomplete="off"
+                      spellcheck="false"
+                      data-i18n-placeholder="githubTokenPlaceholder"
+                      placeholder="ghp_…"
+                    />
+                  </label>
+                  <label class="remember-token">
+                    <input id="remember-github-token" type="checkbox" />
+                    <span data-i18n="rememberGithubToken">Remember on this device</span>
+                  </label>
+                </section>
+                <section class="settings-section">
+                  <div class="settings-section-heading">
+                    <h2 class="settings-section-title" data-i18n="outputTitle">Output settings</h2>
+                    <span class="info-tip info-tip-inline">
+                      <button type="button" class="info-button" aria-label="What do output settings control?" data-i18n-aria="outputInfoAria">i</button>
+                      <span class="info-tooltip" role="tooltip" data-i18n="outputInfo">
+                        These options shape the static site files SilentForge generates: index.html, detail pages, Preview, and ZIP download.
+                        They do not change this Workbench interface.
+                        Mode controls narrative structure. Theme controls colors and typography on every generated page.
+                        Chapter toggles include or omit sections when the repository has matching content.
+                      </span>
+                    </span>
+                  </div>
+                  <p class="settings-section-lead" data-i18n="outputLead">Applies to Preview, ZIP, and every generated HTML page—not this Workbench UI.</p>
+                  <div class="generation-options">
+                    <div class="option-grid">
+                      <label>
+                        <span class="option-label-row">
+                          <span data-i18n="modeLabel">Mode</span>
+                          <span class="info-tip info-tip-inline">
+                            <button type="button" class="info-button" aria-label="What does Mode control?" data-i18n-aria="modeInfoAria">i</button>
+                            <span class="info-tooltip" role="tooltip" data-i18n="modeInfo">
+                              Chooses how the repository story is arranged: developer docs, architecture handoff, visual showcase, or a compact narrative.
+                              Auto picks based on README, screenshots, and codebase signals.
+                            </span>
+                          </span>
+                        </span>
+                        <select id="generation-mode">
+                          <option value="auto" data-i18n-option="presentation.mode.auto">Auto</option>
+                          <option value="developer-deck" data-i18n-option="presentation.mode.developer-deck">Developer docs</option>
+                          <option value="architecture-map" data-i18n-option="presentation.mode.architecture-map">Architecture handoff</option>
+                          <option value="visual-showcase" data-i18n-option="presentation.mode.visual-showcase">Visual showcase</option>
+                          <option value="compact-story" data-i18n-option="presentation.mode.compact-story">Compact story</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span class="option-label-row">
+                          <span data-i18n="themeLabel">Theme</span>
+                          <span class="info-tip info-tip-inline">
+                            <button type="button" class="info-button" aria-label="What does Theme control?" data-i18n-aria="themeInfoAria">i</button>
+                            <span class="info-tooltip" role="tooltip" data-i18n="themeInfo">
+                              Sets the visual style on all generated pages: Dark Signal, Editorial Light, or Blueprint.
+                              Auto follows the selected mode. This is not the Workbench theme.
+                            </span>
+                          </span>
+                        </span>
+                        <select id="generation-theme">
+                          <option value="auto" data-i18n-option="presentation.theme.auto">Auto</option>
+                          <option value="signal-dark" data-i18n-option="presentation.theme.signal-dark">Dark Signal</option>
+                          <option value="editorial-light" data-i18n-option="presentation.theme.editorial-light">Editorial Light</option>
+                          <option value="blueprint" data-i18n-option="presentation.theme.blueprint">Blueprint</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="chapter-options-header">
+                      <span class="option-label-row">
+                        <span data-i18n="chaptersLabel">Chapters</span>
+                        <span class="info-tip info-tip-inline">
+                          <button type="button" class="info-button" aria-label="What do chapter toggles control?" data-i18n-aria="chaptersInfoAria">i</button>
+                          <span class="info-tooltip" role="tooltip" data-i18n="chaptersInfo">
+                            Turn sections on or off in the generated presentation. Empty sections are skipped even when enabled.
+                            The hero chapter is always included.
+                          </span>
                         </span>
                       </span>
                     </div>
-                    <p class="output-settings-lead" data-i18n="outputLead">Applies to Preview, ZIP, and every generated HTML page—not this Workbench UI.</p>
+                    <div class="chapter-options" aria-label="Chapter switches">
+                      <label><input type="checkbox" data-chapter-toggle="features" checked /> <span data-i18n="chapterFeatures">Features</span></label>
+                      <label><input type="checkbox" data-chapter-toggle="visuals" checked /> <span data-i18n="chapterVisuals">Visuals</span></label>
+                      <label><input type="checkbox" data-chapter-toggle="usage" checked /> <span data-i18n="chapterUsage">Usage</span></label>
+                      <label><input type="checkbox" data-chapter-toggle="readme-insights" checked /> <span data-i18n="chapterReadmeInsights">README insights</span></label>
+                      <label><input type="checkbox" data-chapter-toggle="technology" checked /> <span data-i18n="chapterTechnology">Technology</span></label>
+                      <label><input type="checkbox" data-chapter-toggle="architecture" checked /> <span data-i18n="chapterArchitecture">Architecture</span></label>
+                      <label><input type="checkbox" data-chapter-toggle="resources" checked /> <span data-i18n="chapterResources">Resources</span></label>
+                    </div>
                   </div>
-                </div>
-              </summary>
-              <div class="generation-options">
-                <div class="option-grid">
-                  <label>
-                    <span class="option-label-row">
-                      <span data-i18n="modeLabel">Mode</span>
-                      <span class="info-tip info-tip-inline">
-                        <button type="button" class="info-button" aria-label="What does Mode control?" data-i18n-aria="modeInfoAria">i</button>
-                        <span class="info-tooltip" role="tooltip" data-i18n="modeInfo">
-                          Chooses how the repository story is arranged: developer docs, architecture handoff, visual showcase, or a compact narrative.
-                          Auto picks based on README, screenshots, and codebase signals.
-                        </span>
-                      </span>
-                    </span>
-                    <select id="generation-mode">
-                      <option value="auto" data-i18n-option="presentation.mode.auto">Auto</option>
-                      <option value="developer-deck" data-i18n-option="presentation.mode.developer-deck">Developer docs</option>
-                      <option value="architecture-map" data-i18n-option="presentation.mode.architecture-map">Architecture handoff</option>
-                      <option value="visual-showcase" data-i18n-option="presentation.mode.visual-showcase">Visual showcase</option>
-                      <option value="compact-story" data-i18n-option="presentation.mode.compact-story">Compact story</option>
-                    </select>
+                </section>
+                <section class="settings-section">
+                  <label class="ai-option">
+                    <input id="use-ai" type="checkbox" />
+                    <span><strong data-i18n="aiTitle">AI-assisted structure.</strong> <span data-i18n="aiBody">When enabled, extracted repository information is sent to OpenAI to arrange the presentation. Repository facts remain source-bound, and failures fall back to local rules.</span></span>
                   </label>
-                  <label>
-                    <span class="option-label-row">
-                      <span data-i18n="themeLabel">Theme</span>
-                      <span class="info-tip info-tip-inline">
-                        <button type="button" class="info-button" aria-label="What does Theme control?" data-i18n-aria="themeInfoAria">i</button>
-                        <span class="info-tooltip" role="tooltip" data-i18n="themeInfo">
-                          Sets the visual style on all generated pages: Dark Signal, Editorial Light, or Blueprint.
-                          Auto follows the selected mode. This is not the Workbench theme.
-                        </span>
-                      </span>
-                    </span>
-                    <select id="generation-theme">
-                      <option value="auto" data-i18n-option="presentation.theme.auto">Auto</option>
-                      <option value="signal-dark" data-i18n-option="presentation.theme.signal-dark">Dark Signal</option>
-                      <option value="editorial-light" data-i18n-option="presentation.theme.editorial-light">Editorial Light</option>
-                      <option value="blueprint" data-i18n-option="presentation.theme.blueprint">Blueprint</option>
-                    </select>
-                  </label>
-                </div>
-                <div class="chapter-options-header">
-                  <span class="option-label-row">
-                    <span data-i18n="chaptersLabel">Chapters</span>
-                    <span class="info-tip info-tip-inline">
-                      <button type="button" class="info-button" aria-label="What do chapter toggles control?" data-i18n-aria="chaptersInfoAria">i</button>
-                      <span class="info-tooltip" role="tooltip" data-i18n="chaptersInfo">
-                        Turn sections on or off in the generated presentation. Empty sections are skipped even when enabled.
-                        The hero chapter is always included.
-                      </span>
-                    </span>
-                  </span>
-                </div>
-                <div class="chapter-options" aria-label="Chapter switches">
-                  <label><input type="checkbox" data-chapter-toggle="features" checked /> <span data-i18n="chapterFeatures">Features</span></label>
-                  <label><input type="checkbox" data-chapter-toggle="visuals" checked /> <span data-i18n="chapterVisuals">Visuals</span></label>
-                  <label><input type="checkbox" data-chapter-toggle="usage" checked /> <span data-i18n="chapterUsage">Usage</span></label>
-                  <label><input type="checkbox" data-chapter-toggle="readme-insights" checked /> <span data-i18n="chapterReadmeInsights">README insights</span></label>
-                  <label><input type="checkbox" data-chapter-toggle="technology" checked /> <span data-i18n="chapterTechnology">Technology</span></label>
-                  <label><input type="checkbox" data-chapter-toggle="architecture" checked /> <span data-i18n="chapterArchitecture">Architecture</span></label>
-                  <label><input type="checkbox" data-chapter-toggle="resources" checked /> <span data-i18n="chapterResources">Resources</span></label>
+                </section>
+                <div class="settings-actions">
+                  <button type="button" id="save-settings" class="primary-button settings-save" data-i18n="saveSettings">Save settings</button>
+                  <p class="settings-save-hint" id="settings-save-hint" hidden data-i18n="settingsSaved">Settings saved.</p>
+                  <p class="settings-save-note" data-i18n="settingsSaveNote">Generate uses saved settings. GitHub token is only sent after you save a non-empty token here.</p>
                 </div>
               </div>
             </details>
-          </form>
+          </div>
           <section id="history" class="history" aria-label="Recent repositories">
             <div class="history-header">
               <span data-i18n="historyRecent">Recent targets</span>
@@ -185,6 +190,13 @@ export function workbenchTemplate(styles: string, clientScript: string): string 
               <a id="download" class="download" href="#" aria-disabled="true" data-i18n="downloadZip">Download ZIP</a>
               <button type="button" id="back-home-button" class="secondary-button back-home-button" hidden data-i18n="backToHome">Back to home</button>
             </div>
+            <details class="deploy-guide" id="deploy-guide" hidden>
+              <summary class="deploy-guide-summary" data-i18n="deployTitle">Deploy</summary>
+              <div class="deploy-guide-body">
+                <p class="deploy-guide-lead" data-i18n="deployLead">Copy commands for common static hosts. Replace paths if you renamed the output folder.</p>
+                <div id="deploy-commands" class="deploy-commands"></div>
+              </div>
+            </details>
           </div>
         </section>
         <section class="panel content">

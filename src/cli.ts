@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { Command } from "commander";
 import { initRepoSite } from "./commands/init.js";
@@ -89,9 +90,12 @@ export function createCli(): Command {
           token: options.token,
           generationOptions
         });
+        const indexPath = join(result.outputDir, "index.html");
         logger.info(t(locale, "cli.generated", { fullName: result.fullName }));
         logger.info(t(locale, "cli.output", { outputDir: result.outputDir }));
+        logger.info(t(locale, "cli.indexPath", { indexPath }));
         logger.info(t(locale, "cli.nextStep"));
+        logger.info(t(locale, "cli.serveHint", { outputDir: result.outputDir }));
       }
     );
 

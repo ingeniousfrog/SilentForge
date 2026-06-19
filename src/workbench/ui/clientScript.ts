@@ -4,10 +4,29 @@ export function workbenchClientScript(i18nJson: string): string {
       const uiThemeKey = "silentforge.uiTheme";
       const githubTokenKey = "silentforge.githubToken";
       const rememberGithubTokenKey = "silentforge.rememberGithubToken";
-      const outputSettingsKey = "silentforge.outputSettingsOpen";
+      const generationSettingsKey = "silentforge.generationSettings";
+      const settingsOpenKey = "silentforge.settingsOpen";
+      const legacyOutputSettingsKey = "silentforge.outputSettingsOpen";
       const historyKey = "silentforge.recentRepositories";
       const legacyHistoryKey = "reposite.recentRepositories";
+      const defaultChapterKinds = [
+        "features",
+        "visuals",
+        "usage",
+        "readme-insights",
+        "technology",
+        "architecture",
+        "resources"
+      ];
       const maxHistory = 6;
+      const savedSettings = {
+        githubToken: undefined,
+        rememberGithubToken: false,
+        useAi: false,
+        mode: "auto",
+        theme: "auto",
+        enabledChapters: defaultChapterKinds.slice()
+      };
       const state = {
         mode: "idle",
         job: null,
@@ -17,7 +36,7 @@ export function workbenchClientScript(i18nJson: string): string {
       };
 
       const shell = document.querySelector(".shell");
-      const form = document.querySelector("#repo-form");
+      const repoConsole = document.querySelector("#repo-console");
       const input = document.querySelector("#repo-url");
       const startButton = document.querySelector("#start-button");
       const useAiInput = document.querySelector("#use-ai");
@@ -31,6 +50,8 @@ export function workbenchClientScript(i18nJson: string): string {
       const contentEl = document.querySelector("#content");
       const downloadEl = document.querySelector("#download");
       const backHomeButton = document.querySelector("#back-home-button");
+      const deployGuideEl = document.querySelector("#deploy-guide");
+      const deployCommandsEl = document.querySelector("#deploy-commands");
       const historyEl = document.querySelector("#history");
       const historyListEl = document.querySelector("#history-list");
       const generationModeEl = document.querySelector("#generation-mode");
@@ -39,56 +60,74 @@ export function workbenchClientScript(i18nJson: string): string {
       const tabs = Array.from(document.querySelectorAll(".tab"));
       const langPills = Array.from(document.querySelectorAll(".lang-pill"));
       const themePills = Array.from(document.querySelectorAll(".theme-pill"));
-      const outputSettingsEl = document.querySelector("#output-settings");
+      const workbenchSettingsEl = document.querySelector("#workbench-settings");
+      const settingsSummaryEl = document.querySelector("#settings-summary");
+      const saveSettingsButton = document.querySelector("#save-settings");
+      const settingsSaveHintEl = document.querySelector("#settings-save-hint");
+      const minGithubTokenLength = 10;
 
-      function bindGithubTokenStorage() {
-        if (!githubTokenInput || !rememberGithubTokenInput) return;
-
-        try {
-          if (localStorage.getItem(rememberGithubTokenKey) === "true") {
-            rememberGithubTokenInput.checked = true;
-            githubTokenInput.value = localStorage.getItem(githubTokenKey) || "";
-          }
-        } catch {
-          // Ignore storage failures.
+      function normalizeGithubToken(value) {
+        if (typeof value !== "string") {
+          return undefined;
         }
+        const token = value.trim();
+        if (token.length < minGithubTokenLength) {
+          return undefined;
+        }
+        return token;
+      }
 
-        rememberGithubTokenInput.addEventListener("change", () => {
-          try {
-            if (rememberGithubTokenInput.checked) {
-              localStorage.setItem(rememberGithubTokenKey, "true");
-              localStorage.setItem(githubTokenKey, githubTokenInput.value.trim());
-            } else {
-              localStorage.removeItem(rememberGithubTokenKey);
-              localStorage.removeItem(githubTokenKey);
-            }
-          } catch {
-            // Ignore storage failures.
-          }
-        });
+      function readSettingsForm() {
+        const enabledChapters = chapterToggleEls
+          .filter((item) => item.checked)
+          .map((item) => item.dataset.chapterToggle)
+          .filter(Boolean);
+        return {
+          githubToken: normalizeGithubToken(githubTokenInput ? githubTokenInput.value : undefined),
+          rememberGithubToken: Boolean(rememberGithubTokenInput?.checked),
+          useAi: Boolean(useAiInput?.checked),
+          mode: generationModeEl?.value || "auto",
+          theme: generationThemeEl?.value || "auto",
+          enabledChapters: enabledChapters.length ? enabledChapters : defaultChapterKinds.slice()
+        };
+      }
 
-        githubTokenInput.addEventListener("input", () => {
-          if (!rememberGithubTokenInput.checked) return;
-          try {
-            localStorage.setItem(githubTokenKey, githubTokenInput.value.trim());
-          } catch {
-            // Ignore storage failures.
-          }
+      function applySettingsToForm(settings) {
+        if (generationModeEl) {
+          generationModeEl.value = settings.mode || "auto";
+        }
+        if (generationThemeEl) {
+          generationThemeEl.value = settings.theme || "auto";
+        }
+        if (useAiInput) {
+          useAiInput.checked = Boolean(settings.useAi);
+        }
+        if (rememberGithubTokenInput) {
+          rememberGithubTokenInput.checked = Boolean(settings.rememberGithubToken);
+        }
+        if (githubTokenInput) {
+          githubTokenInput.value = settings.githubToken || "";
+        }
+        const enabled = new Set(settings.enabledChapters || defaultChapterKinds);
+        chapterToggleEls.forEach((item) => {
+          item.checked = enabled.has(item.dataset.chapterToggle);
         });
       }
 
-      function collectGithubToken() {
-        if (!githubTokenInput) return undefined;
-        const token = githubTokenInput.value.trim();
-        return token || undefined;
-      }
-
-      function persistGithubTokenPreference() {
-        if (!githubTokenInput || !rememberGithubTokenInput) return;
+      function persistSavedSettings(settings) {
         try {
-          if (rememberGithubTokenInput.checked) {
+          localStorage.setItem(
+            generationSettingsKey,
+            JSON.stringify({
+              useAi: settings.useAi,
+              mode: settings.mode,
+              theme: settings.theme,
+              enabledChapters: settings.enabledChapters
+            })
+          );
+          if (settings.rememberGithubToken && settings.githubToken) {
             localStorage.setItem(rememberGithubTokenKey, "true");
-            localStorage.setItem(githubTokenKey, githubTokenInput.value.trim());
+            localStorage.setItem(githubTokenKey, settings.githubToken);
           } else {
             localStorage.removeItem(rememberGithubTokenKey);
             localStorage.removeItem(githubTokenKey);
@@ -98,29 +137,108 @@ export function workbenchClientScript(i18nJson: string): string {
         }
       }
 
-      function bindOutputSettings() {
-        if (!outputSettingsEl) return;
-        outputSettingsEl.querySelectorAll(".info-button").forEach((button) => {
+      function loadSavedSettings() {
+        let nextSettings = {
+          githubToken: undefined,
+          rememberGithubToken: false,
+          useAi: false,
+          mode: "auto",
+          theme: "auto",
+          enabledChapters: defaultChapterKinds.slice()
+        };
+        try {
+          const raw = localStorage.getItem(generationSettingsKey);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") {
+              nextSettings = {
+                ...nextSettings,
+                useAi: Boolean(parsed.useAi),
+                mode: typeof parsed.mode === "string" ? parsed.mode : "auto",
+                theme: typeof parsed.theme === "string" ? parsed.theme : "auto",
+                enabledChapters: Array.isArray(parsed.enabledChapters)
+                  ? parsed.enabledChapters.filter((item) => typeof item === "string")
+                  : defaultChapterKinds.slice()
+              };
+            }
+          }
+          if (localStorage.getItem(rememberGithubTokenKey) === "true") {
+            nextSettings.rememberGithubToken = true;
+            nextSettings.githubToken = normalizeGithubToken(localStorage.getItem(githubTokenKey));
+          }
+        } catch {
+          // Ignore storage failures.
+        }
+        Object.assign(savedSettings, nextSettings);
+        applySettingsToForm(savedSettings);
+        renderSettingsSummary();
+      }
+
+      function saveSettings() {
+        const nextSettings = readSettingsForm();
+        Object.assign(savedSettings, nextSettings);
+        persistSavedSettings(savedSettings);
+        renderSettingsSummary();
+        if (settingsSaveHintEl) {
+          settingsSaveHintEl.hidden = false;
+          window.setTimeout(() => {
+            settingsSaveHintEl.hidden = true;
+          }, 1800);
+        }
+      }
+
+      function renderSettingsSummary() {
+        if (!settingsSummaryEl) return;
+        const parts = [];
+        if (savedSettings.githubToken) {
+          parts.push(t("settingsSummaryToken"));
+        }
+        if (savedSettings.useAi) {
+          parts.push(t("settingsSummaryAi"));
+        }
+        if (savedSettings.mode !== "auto" || savedSettings.theme !== "auto") {
+          parts.push(t("settingsSummaryOutput"));
+        }
+        settingsSummaryEl.textContent = parts.length ? parts.join(" · ") : t("settingsSummaryDefault");
+      }
+
+      function bindWorkbenchSettings() {
+        if (!workbenchSettingsEl) return;
+        workbenchSettingsEl.querySelectorAll(".info-button").forEach((button) => {
           button.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopPropagation();
           });
         });
         try {
-          const stored = localStorage.getItem(outputSettingsKey);
+          const stored = localStorage.getItem(settingsOpenKey) || localStorage.getItem(legacyOutputSettingsKey);
           if (stored === "true") {
-            outputSettingsEl.open = true;
+            workbenchSettingsEl.open = true;
           }
         } catch {
           // Ignore storage failures.
         }
-        outputSettingsEl.addEventListener("toggle", () => {
+        workbenchSettingsEl.addEventListener("toggle", () => {
           try {
-            localStorage.setItem(outputSettingsKey, outputSettingsEl.open ? "true" : "false");
+            localStorage.setItem(settingsOpenKey, workbenchSettingsEl.open ? "true" : "false");
           } catch {
             // Ignore storage failures.
           }
         });
+        saveSettingsButton?.addEventListener("click", () => saveSettings());
+      }
+
+      function savedGithubToken() {
+        return normalizeGithubToken(savedSettings.githubToken);
+      }
+
+      function savedGenerationOptions() {
+        return {
+          locale: state.locale,
+          ...(savedSettings.mode === "auto" ? {} : { mode: savedSettings.mode }),
+          ...(savedSettings.theme === "auto" ? {} : { theme: savedSettings.theme }),
+          enabledChapters: savedSettings.enabledChapters.slice()
+        };
       }
 
       function t(key, params) {
@@ -200,6 +318,7 @@ export function workbenchClientScript(i18nJson: string): string {
         if (state.resources) {
           renderContent();
         }
+        renderSettingsSummary();
       }
 
       langPills.forEach((pill) => {
@@ -223,15 +342,22 @@ export function workbenchClientScript(i18nJson: string): string {
         applyLocale("en");
       }
 
-      bindOutputSettings();
-      bindGithubTokenStorage();
+      bindWorkbenchSettings();
+      loadSavedSettings();
+      if (window.location.search) {
+        const params = new URLSearchParams(window.location.search);
+        const legacyRepoUrl = params.get("repoUrl");
+        if (legacyRepoUrl && input) {
+          input.value = legacyRepoUrl;
+        }
+        window.history.replaceState({}, "", window.location.pathname);
+      }
       backHomeButton?.addEventListener("click", () => resetToHome());
 
       renderHistory();
       renderMode("idle");
 
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
+      async function startGeneration() {
         const repoUrl = input.value.trim();
         if (!repoUrl) {
           renderStatus("error", t("urlRequired"));
@@ -240,7 +366,6 @@ export function workbenchClientScript(i18nJson: string): string {
         }
 
         saveHistory(repoUrl);
-        persistGithubTokenPreference();
         renderHistory();
         renderMode("active");
         renderStatus("submitting", t("creatingJob"));
@@ -261,9 +386,9 @@ export function workbenchClientScript(i18nJson: string): string {
           },
           body: JSON.stringify({
             repoUrl: repoUrl,
-            useAi: useAiInput.checked,
-            githubToken: collectGithubToken(),
-            generationOptions: collectGenerationOptions()
+            useAi: savedSettings.useAi,
+            ...(savedGithubToken() ? { githubToken: savedGithubToken() } : {}),
+            generationOptions: savedGenerationOptions()
           })
         });
 
@@ -277,6 +402,17 @@ export function workbenchClientScript(i18nJson: string): string {
         state.job = await response.json();
         renderStatus("running", t("generationStarted"));
         connectEvents(state.job.id);
+      }
+
+      startButton?.addEventListener("click", () => {
+        void startGeneration();
+      });
+
+      input?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          void startGeneration();
+        }
       });
 
       tabs.forEach((tab) => {
@@ -347,6 +483,12 @@ export function workbenchClientScript(i18nJson: string): string {
         if (backHomeButton) {
           backHomeButton.hidden = !visible;
         }
+        if (deployGuideEl) {
+          deployGuideEl.hidden = !visible;
+          if (visible) {
+            renderDeployCommands();
+          }
+        }
       }
 
       function appendEvent(event) {
@@ -371,6 +513,9 @@ export function workbenchClientScript(i18nJson: string): string {
           preview: renderPreview
         };
         contentEl.innerHTML = renderers[state.activeTab]();
+        if (state.activeTab === "overview") {
+          bindCreatorActions(contentEl);
+        }
       }
 
       function resetToHome() {
@@ -485,13 +630,196 @@ export function workbenchClientScript(i18nJson: string): string {
           const noteClass = dimension.gaps.length > 0 ? "dimension-gap" : "dimension-strength";
           return '<article class="dimension-card"><div class="dimension-card-header"><strong>' + escapeHtml(dimension.label) + '</strong><span>' + escapeHtml(String(dimension.score)) + '/' + escapeHtml(String(dimension.maxScore)) + '</span></div><div class="dimension-progress"><span style="width:' + dimPercent + '%"></span></div><p class="' + noteClass + '">' + escapeHtml(note) + '</p></article>';
         }).join("");
-        return '<h2>' + escapeHtml(t("readinessTitle")) + '</h2>' +
+        return '<div class="diagnostics-panel">' +
+          '<div class="creator-actions">' +
+          '<span class="creator-actions-label">' + escapeHtml(t("creatorActionsTitle")) + '</span>' +
+          copyButton("copy-diagnostics-markdown", t("copyDiagnosticsMarkdown")) +
+          copyButton("copy-readme-badge", t("copyReadmeBadge")) +
+          copyButton("copy-pages-workflow", t("copyPagesWorkflow")) +
+          '</div>' +
+          '<h2>' + escapeHtml(t("readinessTitle")) + '</h2>' +
           '<div class="readiness-progress" role="progressbar" aria-valuenow="' + diagnostics.score + '" aria-valuemin="0" aria-valuemax="' + diagnostics.maxScore + '"><div class="readiness-progress-bar" style="width:' + percent + '%"></div><span class="readiness-progress-label">' + escapeHtml(String(diagnostics.score)) + '/' + escapeHtml(String(diagnostics.maxScore)) + ' · ' + escapeHtml(grade) + '</span></div>' +
           (dimensions ? '<div class="dimension-grid">' + dimensions + '</div>' : "") +
           '<div class="signal-grid">' +
           signal(t("topStrengths"), diagnostics.strengths.slice(0, 3).join(" · ") || t("noStrengths"), t("diagnosticsSource")) +
           signal(t("nextImprovements"), diagnostics.recommendations.slice(0, 3).join(" · ") || t("noRecommendations"), t("diagnosticsSource")) +
-          '</div>';
+          '</div></div>';
+      }
+
+      function copyButton(id, label) {
+        return '<button type="button" class="secondary-button copy-button" id="' + escapeAttribute(id) + '" data-copy-label="' + escapeAttribute(label) + '">' + escapeHtml(label) + '</button>';
+      }
+
+      function bindCreatorActions(root) {
+        if (!root) return;
+        const bindings = [
+          ["copy-diagnostics-markdown", () => buildDiagnosticsMarkdown(state.resources.diagnostics, state.resources.repository.fullName)],
+          ["copy-readme-badge", () => buildReadmeBadge(state.resources.repository.fullName)],
+          ["copy-pages-workflow", () => buildPagesWorkflow(state.resources.repository.fullName)]
+        ];
+        bindings.forEach(([id, builder]) => {
+          const button = root.querySelector("#" + id);
+          if (!button) return;
+          button.addEventListener("click", async () => {
+            await copyText(builder(), button);
+          });
+        });
+      }
+
+      async function copyText(text, button) {
+        const original = button.getAttribute("data-copy-label") || button.textContent || "";
+        try {
+          await navigator.clipboard.writeText(text);
+          button.textContent = t("copied");
+          window.setTimeout(() => {
+            button.textContent = original;
+          }, 1600);
+        } catch {
+          button.textContent = original;
+        }
+      }
+
+      function pagesSiteUrl(fullName) {
+        const parts = String(fullName || "").split("/");
+        if (parts.length !== 2 || !parts[0] || !parts[1]) {
+          return "https://YOUR_USER.github.io/YOUR_REPO/";
+        }
+        return "https://" + parts[0] + ".github.io/" + parts[1] + "/";
+      }
+
+      function outputDirName(fullName) {
+        const repo = String(fullName || "repo").split("/").pop() || "repo";
+        return repo + "-site";
+      }
+
+      function buildDiagnosticsMarkdown(diagnostics, fullName) {
+        if (!diagnostics) {
+          return "";
+        }
+        const grade = t("diagnostics.grade." + diagnostics.grade);
+        const lines = [
+          "## Repository Readiness · " + fullName,
+          "",
+          "**Score:** " + diagnostics.score + "/" + diagnostics.maxScore + " · **Grade:** " + grade,
+          ""
+        ];
+        if (diagnostics.strengths.length) {
+          lines.push("### Strengths", "");
+          diagnostics.strengths.forEach((item) => lines.push("- " + item));
+          lines.push("");
+        }
+        if (diagnostics.gaps.length) {
+          lines.push("### Gaps", "");
+          diagnostics.gaps.forEach((item) => lines.push("- " + item));
+          lines.push("");
+        }
+        if (diagnostics.recommendations.length) {
+          lines.push("### Recommendations", "");
+          diagnostics.recommendations.forEach((item) => lines.push("- [ ] " + item));
+          lines.push("");
+        }
+        (diagnostics.dimensions || []).forEach((dimension) => {
+          lines.push("### " + dimension.label + " (" + dimension.score + "/" + dimension.maxScore + ")", "");
+          if (dimension.strengths.length) {
+            dimension.strengths.forEach((item) => lines.push("- Strength: " + item));
+          }
+          if (dimension.gaps.length) {
+            dimension.gaps.forEach((item) => lines.push("- Gap: " + item));
+          }
+          if (dimension.recommendations.length) {
+            dimension.recommendations.forEach((item) => lines.push("- Recommendation: " + item));
+          }
+          lines.push("");
+        });
+        lines.push("_Generated with SilentForge diagnostics._");
+        return lines.join("\\n");
+      }
+
+      function buildReadmeBadge(fullName) {
+        const url = pagesSiteUrl(fullName);
+        return "[![Presentation site](https://img.shields.io/badge/Presentation-SilentForge-6366f1?style=for-the-badge)](" + url + ")";
+      }
+
+      function buildPagesWorkflow(fullName) {
+        const repo = String(fullName || "owner/repo");
+        return "name: Deploy SilentForge presentation site\\n\\n" +
+          "on:\\n" +
+          "  push:\\n" +
+          "    branches: [main]\\n" +
+          "  workflow_dispatch:\\n\\n" +
+          "permissions:\\n" +
+          "  contents: read\\n" +
+          "  pages: write\\n" +
+          "  id-token: write\\n\\n" +
+          "concurrency:\\n" +
+          "  group: pages\\n" +
+          "  cancel-in-progress: false\\n\\n" +
+          "jobs:\\n" +
+          "  build:\\n" +
+          "    runs-on: ubuntu-latest\\n" +
+          "    steps:\\n" +
+          "      - uses: actions/checkout@v4\\n" +
+          "      - uses: actions/setup-node@v4\\n" +
+          "        with:\\n" +
+          "          node-version: \\\"20\\\"\\n" +
+          "      - name: Generate presentation site\\n" +
+          "        env:\\n" +
+          "          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}\\n" +
+          "        run: npx silentforge@latest init " + repo + " -o site --locale en\\n" +
+          "      - uses: actions/upload-pages-artifact@v3\\n" +
+          "        with:\\n" +
+          "          path: site\\n\\n" +
+          "  deploy:\\n" +
+          "    needs: build\\n" +
+          "    runs-on: ubuntu-latest\\n" +
+          "    environment:\\n" +
+          "      name: github-pages\\n" +
+          "      url: \${{ steps.deployment.outputs.page_url }}\\n" +
+          "    steps:\\n" +
+          "      - id: deployment\\n" +
+          "        uses: actions/deploy-pages@v4\\n";
+      }
+
+      function renderDeployCommands() {
+        if (!deployCommandsEl || !state.resources) {
+          return;
+        }
+        const fullName = state.resources.repository.fullName;
+        const outputDir = outputDirName(fullName);
+        const pagesUrl = pagesSiteUrl(fullName);
+        const blocks = [
+          {
+            title: t("deployGithubPagesTitle"),
+            body: t("deployGithubPagesBody"),
+            command: "# Enable Settings → Pages → GitHub Actions, then commit .github/workflows/silentforge-pages.yml\\n# Expected site URL:\\n" + pagesUrl
+          },
+          {
+            title: t("deployVercelTitle"),
+            body: "",
+            command: "npx --yes vercel deploy " + outputDir + " --prod"
+          },
+          {
+            title: t("deployCloudflareTitle"),
+            body: "",
+            command: "npx --yes wrangler pages deploy " + outputDir + " --project-name=" + (fullName.split("/")[1] || "presentation-site")
+          },
+          {
+            title: t("deployStaticTitle"),
+            body: "",
+            command: "npx --yes serve " + JSON.stringify(outputDir)
+          }
+        ];
+        deployCommandsEl.innerHTML = blocks.map((block) =>
+          '<section class="deploy-block"><div class="deploy-block-header"><strong>' + escapeHtml(block.title) + '</strong>' +
+          (block.body ? '<p>' + escapeHtml(block.body) + '</p>' : '') +
+          '</div><pre class="deploy-command"><code>' + escapeHtml(block.command) + '</code></pre>' +
+          '<button type="button" class="secondary-button copy-button deploy-copy" data-copy-label="' + escapeAttribute(t("copyCommand")) + '" data-command="' + escapeAttribute(block.command) + '">' + escapeHtml(t("copyCommand")) + '</button></section>'
+        ).join("");
+        deployCommandsEl.querySelectorAll(".deploy-copy").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await copyText(button.getAttribute("data-command") || "", button);
+          });
+        });
       }
 
       function signal(label, value, source) {
@@ -526,21 +854,6 @@ export function workbenchClientScript(i18nJson: string): string {
         return items.length
           ? '<ul class="feature-list">' + items.map((item) => '<li>' + escapeHtml(item) + '</li>').join("") + '</ul>'
           : '<div class="empty-card"><p>' + escapeHtml(emptyMessage) + '</p></div>';
-      }
-
-      function collectGenerationOptions() {
-        const mode = generationModeEl.value || "auto";
-        const theme = generationThemeEl.value || "auto";
-        const enabledChapters = chapterToggleEls
-          .filter((item) => item.checked)
-          .map((item) => item.dataset.chapterToggle)
-          .filter(Boolean);
-        return {
-          locale: state.locale,
-          ...(mode === "auto" ? {} : { mode: mode }),
-          ...(theme === "auto" ? {} : { theme: theme }),
-          enabledChapters: enabledChapters
-        };
       }
 
       function renderHistory() {

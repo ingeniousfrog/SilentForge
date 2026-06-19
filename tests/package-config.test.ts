@@ -10,6 +10,7 @@ describe("package publishing configuration", () => {
     };
 
     expect(packageJson.bin?.reposite).toBe("./dist/cli.js");
+    expect(packageJson.bin?.silentforge).toBe("./dist/cli.js");
     expect(packageJson.files).toEqual(["dist", "README.md", "README-CN.md", "LICENSE", "package.json"]);
     expect(packageJson.scripts?.build).toContain("npm run clean");
     expect(packageJson.scripts?.prepack).toBe("npm run build");

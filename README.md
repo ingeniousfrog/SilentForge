@@ -12,6 +12,8 @@ The default pipeline is **deterministic and source-bound**: it surfaces what the
 
 ## Table of contents
 
+- [Quick start](#quick-start)
+- [Examples](#examples)
 - [Overview](#overview)
 - [How it works](#how-it-works)
 - [Capabilities](#capabilities)
@@ -41,6 +43,47 @@ SilentForge targets teams and maintainers who need a **credible, offline-capable
 | **Generated site** | Plain HTML / CSS / JS / JSON—editable and hostable anywhere |
 
 Both entry points share the same generation engine, so Preview, ZIP download, and CLI output are structurally identical.
+
+---
+
+## Quick start
+
+Requires **Node.js 20+**. No install step:
+
+```sh
+# Generate a static presentation site
+npx silentforge init vercel/next.js
+
+# Open the generated index.html (macOS example)
+open vercel/next.js-site/index.html
+
+# Launch the local Workbench UI
+npx silentforge web
+```
+
+Optional local preview after generation:
+
+```sh
+npx --yes serve "vercel/next.js-site"
+```
+
+---
+
+## Examples
+
+Try SilentForge on well-documented public repositories:
+
+| Repository | Best for | Command |
+|------------|----------|---------|
+| [openai/openai-node](https://github.com/openai/openai-node) | Developer deck (install + usage) | `npx silentforge init openai/openai-node` |
+| [vercel/next.js](https://github.com/vercel/next.js) | Architecture signals in a large monorepo | `npx silentforge init vercel/next.js` |
+| [tailwindlabs/tailwindcss](https://github.com/tailwindlabs/tailwindcss) | Visual README content | `npx silentforge init tailwindlabs/tailwindcss` |
+| [axios/axios](https://github.com/axios/axios) | Compact library narrative | `npx silentforge init axios/axios` |
+| [microsoft/playwright](https://github.com/microsoft/playwright) | Docs-heavy project with releases | `npx silentforge init microsoft/playwright` |
+
+See [examples/README.md](./examples/README.md) for more detail.
+
+**Live demo:** [SilentForge presentation site on GitHub Pages](https://ingeniousfrog.github.io/SilentForge/) — generated from this repository via [`.github/workflows/silentforge-pages.yml`](./.github/workflows/silentforge-pages.yml).
 
 ---
 
@@ -121,20 +164,28 @@ flowchart LR
 
 ## Installation and distribution
 
-SilentForge ships as a Node.js package. The **`reposite`** command is the compiled entrypoint declared in `package.json`:
+### npm (recommended)
 
-```json
-"bin": { "reposite": "./dist/cli.js" }
+```sh
+# One-shot generation (no global install)
+npx silentforge init owner/repo
+
+# Workbench UI
+npx silentforge web
+
+# Global install
+npm install -g silentforge
+reposite init owner/repo
+reposite web
 ```
 
-Source lives in `src/cli.ts`. Running `npm run build` compiles TypeScript into `dist/`, which exposes two subcommands:
+The **`reposite`** and **`silentforge`** commands both point to the same CLI entrypoint declared in `package.json`:
 
-| Command | Purpose |
-|---------|---------|
-| `reposite init <url>` | Generate a static site to a local folder |
-| `reposite web` | Start the Workbench web UI on `127.0.0.1:4177` |
+```json
+"bin": { "reposite": "./dist/cli.js", "silentforge": "./dist/cli.js" }
+```
 
-### Build from source (recommended today)
+### Build from source
 
 ```sh
 git clone https://github.com/ingeniousfrog/SilentForge.git
@@ -185,6 +236,26 @@ reposite web
 ```
 
 Open `<output-dir>/index.html` after `reposite init`, or serve the folder with any static file server.
+
+---
+
+## Deploy to GitHub Pages
+
+SilentForge ships a GitHub Actions workflow that regenerates and publishes a presentation site on every push to `main`.
+
+1. In your repository, go to **Settings → Pages → Build and deployment** and set the source to **GitHub Actions**.
+2. Copy [`.github/workflows/silentforge-pages.yml`](./.github/workflows/silentforge-pages.yml) into your repository (or use **Copy GitHub Pages workflow** in Workbench Overview after generating locally).
+3. Push to `main` or run the workflow manually from the **Actions** tab.
+
+For this repository, the published site lives at **https://ingeniousfrog.github.io/SilentForge/**.
+
+Other repos can use `npx silentforge@latest init ${{ github.repository }} -o site` inside the workflow (see the template). The SilentForge repository itself builds from source with `npm ci && npm run build` so CI always matches the latest commit.
+
+After Pages is live, add a README badge (also available from Workbench Overview):
+
+```markdown
+[![Presentation site](https://img.shields.io/badge/Presentation-SilentForge-6366f1?style=for-the-badge)](https://YOUR_USER.github.io/YOUR_REPO/)
+```
 
 ---
 

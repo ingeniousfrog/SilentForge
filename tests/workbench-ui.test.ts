@@ -10,6 +10,12 @@ describe("workbenchHtml", () => {
 
     expect(html).toContain('data-mode="idle"');
     expect(html).toContain('id="repo-url"');
+    expect(html).toContain('id="repo-console"');
+    expect(html).toContain('id="start-button"');
+    expect(html).toContain('type="button"');
+    expect(html).not.toContain('id="repo-form"');
+    expect(html).not.toContain('name="githubToken"');
+    expect(html).not.toContain('name="repoUrl"');
     expect(html).toContain('id="history-list"');
     expect(html).toContain("silentforge.recentRepositories");
     expect(html).toContain("silentforge.locale");
@@ -26,6 +32,12 @@ describe("workbenchHtml", () => {
     expect(html).toContain('data-tab="wiki"');
     expect(html).toContain('data-tab="preview"');
     expect(html).toContain('id="download"');
+    expect(html).toContain('id="deploy-guide"');
+    expect(html).toContain("renderDeployCommands");
+    expect(html).toContain("buildDiagnosticsMarkdown");
+    expect(html).toContain("buildReadmeBadge");
+    expect(html).toContain("buildPagesWorkflow");
+    expect(html).toContain("copy-diagnostics-markdown");
     expect(html).toContain('id="use-ai"');
     expect(html).toContain("extracted repository information is sent to OpenAI");
     expect(html).toContain('class="preview-frame"');
@@ -44,23 +56,35 @@ describe("workbenchHtml", () => {
     expect(html).toContain("Repository Readiness");
     expect(html).toContain("renderDiagnostics");
     expect(html).toContain("Dark Signal");
-    expect(html).toContain('class="output-settings"');
-    expect(html).toContain('id="output-settings"');
-    expect(html).toContain("output-settings-summary");
-    expect(html).toContain("Generated site");
+    expect(html).toContain('id="workbench-settings"');
+    expect(html).toContain('id="save-settings"');
+    expect(html).toContain("saveSettings");
+    expect(html).toContain("savedGenerationOptions");
+    expect(html).toContain("savedGithubToken");
     expect(html).toContain("info-tooltip");
     expect(html).toContain("What do output settings control?");
     expect(html).toContain("dimension-grid");
     expect(html).toContain("feature-list");
   });
 
+  it("ships browser script that parses without syntax errors", () => {
+    const html = workbenchHtml();
+    const marker = html.indexOf("const I18N");
+    const start = html.lastIndexOf("<script>", marker) + 8;
+    const end = html.indexOf("</script>", marker);
+    const script = html.slice(start, end);
+    expect(() => new Function(script)).not.toThrow();
+  });
+
   it("keeps UI markup, styles, and browser script in focused modules", () => {
     expect(workbenchTemplate("styles", "script")).toContain("<style>styles</style>");
     expect(workbenchStyles()).toContain(".search-console");
-    expect(workbenchStyles()).toContain("--bg:");
-    expect(workbenchClientScript("{}")).toContain("collectGenerationOptions");
+    expect(workbenchStyles()).toContain(".workbench-settings");
     expect(workbenchClientScript("{}")).toContain("applyLocale");
-    expect(workbenchClientScript("{}")).toContain("collectGithubToken");
+    expect(workbenchStyles()).toContain("--bg:");
+    expect(workbenchClientScript("{}")).toContain("startGeneration");
+    expect(workbenchClientScript("{}")).toContain("normalizeGithubToken");
+    expect(workbenchClientScript("{}")).toContain("saveSettings");
     expect(workbenchClientScript("{}")).toContain("applyTheme");
     expect(workbenchClientScript("{}")).toContain("prefers-color-scheme");
     expect(workbenchClientScript("{}")).toContain("resetToHome");
