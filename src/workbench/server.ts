@@ -302,5 +302,5 @@ function safeFilename(value: string): string {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const server = await startWorkbenchServer();
-  process.stdout.write(`RepoSite workbench: ${server.url}\n`);
+  process.stdout.write(`SilentForge workbench: ${server.url}\n`);
 }

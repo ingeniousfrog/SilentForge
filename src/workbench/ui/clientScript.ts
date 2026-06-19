@@ -1,5 +1,6 @@
 export function workbenchClientScript(): string {
-  return `      const historyKey = "reposite.recentRepositories";
+  return `      const historyKey = "silentforge.recentRepositories";
+      const legacyHistoryKey = "reposite.recentRepositories";
       const maxHistory = 6;
       const state = {
         mode: "idle",
@@ -217,14 +218,14 @@ export function workbenchClientScript(): string {
           '<h2>Key Configuration</h2>' + configCards(wiki.configFiles) +
           '<h2>Module Map</h2><div class="resource-grid">' +
           wiki.moduleMap.map((item) => '<div class="resource"><strong>' + escapeHtml(item.heading) + '</strong><p>' + escapeHtml(item.content) + '</p></div>').join("") +
-          '</div><h2>Mermaid Source</h2><pre>' + escapeHtml(wiki.mermaid) + '</pre>';
+          '</div><details class="mermaid-block"><summary>Mermaid source</summary><pre>' + escapeHtml(wiki.mermaid) + '</pre></details>';
       }
 
       function renderPreview() {
         if (!state.job || !state.resources) {
           return renderPending();
         }
-        return '<iframe title="Generated RepoSite preview" src="/preview/' + state.job.id + '/"></iframe>';
+        return '<div class="preview-frame"><iframe title="Generated SilentForge preview" src="/preview/' + state.job.id + '/"></iframe></div>';
       }
 
       function metric(value, label) {
@@ -235,21 +236,24 @@ export function workbenchClientScript(): string {
         if (!diagnostics) {
           return "";
         }
+        const percent = diagnostics.maxScore > 0 ? Math.round((diagnostics.score / diagnostics.maxScore) * 100) : 0;
+        const dimensions = (diagnostics.dimensions || []).map((dimension) => {
+          const dimPercent = dimension.maxScore > 0 ? Math.round((dimension.score / dimension.maxScore) * 100) : 0;
+          const note = dimension.gaps.length > 0 ? dimension.gaps[0] : (dimension.strengths[0] || "No gaps detected.");
+          const noteClass = dimension.gaps.length > 0 ? "dimension-gap" : "dimension-strength";
+          return '<article class="dimension-card"><div class="dimension-card-header"><strong>' + escapeHtml(dimension.label) + '</strong><span>' + escapeHtml(String(dimension.score)) + '/' + escapeHtml(String(dimension.maxScore)) + '</span></div><div class="dimension-progress"><span style="width:' + dimPercent + '%"></span></div><p class="' + noteClass + '">' + escapeHtml(note) + '</p></article>';
+        }).join("");
         return '<h2>Repository Readiness</h2>' +
-          '<div class="metrics">' +
-          metric(diagnostics.score + "/" + diagnostics.maxScore, "Readiness score") +
-          metric(diagnostics.grade, "Readiness grade") +
-          metric(diagnostics.strengths.length, "Strengths") +
-          metric(diagnostics.gaps.length, "Gaps") +
-          '</div>' +
+          '<div class="readiness-progress" role="progressbar" aria-valuenow="' + diagnostics.score + '" aria-valuemin="0" aria-valuemax="' + diagnostics.maxScore + '"><div class="readiness-progress-bar" style="width:' + percent + '%"></div><span class="readiness-progress-label">' + escapeHtml(String(diagnostics.score)) + '/' + escapeHtml(String(diagnostics.maxScore)) + ' · ' + escapeHtml(diagnostics.grade) + '</span></div>' +
+          (dimensions ? '<div class="dimension-grid">' + dimensions + '</div>' : "") +
           '<div class="signal-grid">' +
-          signal("Top strengths", diagnostics.strengths.slice(0, 3).join(" ") || "No strong signals yet.", "Repository diagnostics") +
-          signal("Next improvements", diagnostics.recommendations.slice(0, 3).join(" ") || "No immediate recommendations.", "Repository diagnostics") +
+          signal("Top strengths", diagnostics.strengths.slice(0, 3).join(" · ") || "No strong signals yet.", "Repository diagnostics") +
+          signal("Next improvements", diagnostics.recommendations.slice(0, 3).join(" · ") || "No immediate recommendations.", "Repository diagnostics") +
           '</div>';
       }
 
       function signal(label, value, source) {
-        return '<div class="signal"><strong>' + escapeHtml(label) + '</strong><p>' + escapeHtml(value) + '</p><p>' + escapeHtml(source) + '</p></div>';
+        return '<div class="signal"><strong>' + escapeHtml(label) + '</strong><p>' + escapeHtml(value) + '</p><p class="signal-source">' + escapeHtml(source) + '</p></div>';
       }
 
       function resourceCards(items) {
@@ -278,7 +282,7 @@ export function workbenchClientScript(): string {
 
       function listOrEmpty(items, emptyMessage) {
         return items.length
-          ? '<ul>' + items.map((item) => '<li>' + escapeHtml(item) + '</li>').join("") + '</ul>'
+          ? '<ul class="feature-list">' + items.map((item) => '<li>' + escapeHtml(item) + '</li>').join("") + '</ul>'
           : '<div class="empty-card"><p>' + escapeHtml(emptyMessage) + '</p></div>';
       }
 
@@ -312,7 +316,8 @@ export function workbenchClientScript(): string {
 
       function readHistory() {
         try {
-          const parsed = JSON.parse(localStorage.getItem(historyKey) || "[]");
+          const raw = localStorage.getItem(historyKey) || localStorage.getItem(legacyHistoryKey) || "[]";
+          const parsed = JSON.parse(raw);
           return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string").slice(0, maxHistory) : [];
         } catch {
           return [];

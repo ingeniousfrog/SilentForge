@@ -1,3 +1,4 @@
+import { stripInlineMarkdown } from "../shared/markdown.js";
 import type { ParsedReadme, ReadmeImage, ReadmeLink, ReadmeSection } from "../types.js";
 
 const headingPattern = /^(#{1,6})\s+(.+)$/;
@@ -90,10 +91,7 @@ function extractSummary(lines: readonly string[], title?: string): string | unde
 }
 
 function cleanSummary(value: string): string | undefined {
-  const summary = value
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const summary = stripInlineMarkdown(value);
   return summary || undefined;
 }
 

@@ -38,9 +38,20 @@ describe("initRepoSite", () => {
       plannedBy: "rules"
     });
 
-    const result = await initRepoSite("acme/widgetkit", { cwd: "/tmp/work", outputDir: "site", token: "token" });
+    const result = await initRepoSite("acme/widgetkit", {
+      cwd: "/tmp/work",
+      outputDir: "site",
+      token: "token",
+      generationOptions: { theme: "blueprint", enabledChapters: ["features", "usage"] }
+    });
 
     expect(fetchRepositorySnapshot).toHaveBeenCalledWith("acme/widgetkit", { token: "token" });
+    expect(createPresentationPlan).toHaveBeenCalledWith(
+      expect.objectContaining({ repository: expect.any(Object) }),
+      expect.objectContaining({
+        generationOptions: { theme: "blueprint", enabledChapters: ["features", "usage"] }
+      })
+    );
     expect(generateStaticSite).toHaveBeenCalledWith(
       expect.objectContaining({ repository: expect.any(Object) }),
       "/tmp/work/site",

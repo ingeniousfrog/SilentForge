@@ -4,6 +4,7 @@ import {
   isMermaidCodeBlock,
   summarizeMarkdown
 } from "../presentation/readme.js";
+import { renderInlineMarkdown, stripInlineMarkdown } from "../shared/markdown.js";
 import { escapeHtml, safeExternalUrl } from "./security.js";
 
 export function renderDetailPage(model: SiteModel, plan: PresentationPlan, page: PresentationDetailPage): string {
@@ -53,7 +54,7 @@ function detailContent(model: SiteModel, id: PresentationDetailPage["id"]): stri
 
 function document(model: SiteModel, plan: PresentationPlan, body: string): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escapeHtml(
-    model.readme.summary ?? model.repository.description ?? model.repository.fullName
+    stripInlineMarkdown(model.readme.summary ?? model.repository.description ?? model.repository.fullName)
   )}"><title>${escapeHtml(model.repository.name)}</title><link rel="stylesheet" href="../assets/site.css"></head><body data-theme="${escapeHtml(
     plan.theme
   )}">${body}<script src="../assets/mermaid.js"></script><script src="../assets/site.js"></script></body></html>`;
@@ -72,7 +73,7 @@ function readmeCodeBlock(block: ReturnType<typeof firstMarkdownCodeBlock>): stri
 }
 
 function summaryParagraph(summary: string): string {
-  return summary.trim().length > 0 ? `<p>${escapeHtml(summary)}</p>` : "";
+  return summary.trim().length > 0 ? `<p>${renderInlineMarkdown(summary)}</p>` : "";
 }
 
 function list(items: readonly string[]): string {

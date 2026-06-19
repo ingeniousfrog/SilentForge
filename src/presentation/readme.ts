@@ -1,4 +1,5 @@
 import type { ReadmeSection } from "../types.js";
+import { stripInlineMarkdown } from "../shared/markdown.js";
 
 const genericHeadings = new Set(["features", "feature", "install", "installation", "getting started"]);
 const mermaidStarts = [
@@ -46,13 +47,7 @@ export function selectReadmeInsights(
 }
 
 export function summarizeMarkdown(markdown: string, maximum = 180): string {
-  const plainText = markdown
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/[`*_>#|~-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const plainText = stripInlineMarkdown(markdown);
   return plainText.length <= maximum ? plainText : `${plainText.slice(0, maximum - 1).trimEnd()}…`;
 }
 

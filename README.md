@@ -11,9 +11,9 @@ npm install
 npm run build
 ```
 
-## Start the Frontend Workbench
+## Start the Workbench
 
-For local development, start the RepoSite web UI directly from source:
+For local development, start the SilentForge web UI directly from source:
 
 ```sh
 npm run web
@@ -52,6 +52,16 @@ Enable optional evidence-bound OpenAI presentation planning:
 OPENAI_API_KEY=your_key node dist/cli.js init openai/openai-node --ai
 ```
 
+Customize presentation mode, theme, and chapters from the CLI:
+
+```sh
+reposite init openai/openai-node \
+  --mode developer-deck \
+  --theme signal-dark \
+  --chapters features,usage,architecture \
+  --token "$GITHUB_TOKEN"
+```
+
 Or, after installing the package globally or linking it locally:
 
 ```sh
@@ -66,16 +76,26 @@ reposite web
 
 ## What `reposite init` Generates
 
-- `index.html` adaptive presentation entry point
-- Local Reveal.js runtime plus project-specific CSS and interaction scripts under `assets/`
+- `index.html` scroll-story presentation entry point with sticky chapter navigation
+- Local Mermaid runtime plus project-specific CSS and interaction scripts under `assets/`
 - Content-backed detail pages for installation, usage, architecture, releases, and README sections
-- README-derived insight slides for project-specific topics such as CLI usage, APIs, presets, development, and operational notes
+- README-derived insight sections for project-specific topics such as CLI usage, APIs, presets, development, and operational notes
 - Locally rendered Mermaid repository diagrams and expandable license metadata
 - `data/site.json` with structured repository data and the final presentation plan
 - README-derived title, summary, features, install notes, usage notes, FAQ, screenshots, and links
 - GitHub metadata including stars, topics, license, releases, default branch, language, and file tree
 - Lightweight code wiki with project structure, detected stack, entry files, common config files, module map, and Mermaid diagram
 - Optional local workbench UI for generation progress, resource browsing, preview, and ZIP download
+
+## Presentation Themes
+
+Generated sites support three themes, selectable in the workbench or via `--theme`:
+
+| Theme ID | Label | Character |
+|----------|-------|-----------|
+| `signal-dark` | Dark Signal | Default dark developer-tool palette |
+| `editorial-light` | Editorial Light | Light editorial layout with serif headings |
+| `blueprint` | Blueprint | Engineering grid background |
 
 ## Design Constraints
 

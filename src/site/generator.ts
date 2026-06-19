@@ -15,13 +15,9 @@ export type StaticSiteOptions = {
 
 export async function generateStaticSite(model: SiteModel, outputDir: string, options: StaticSiteOptions = {}): Promise<void> {
   const plan = validatePresentationPlan(options.presentationPlan ?? buildPresentationPlan(model), model);
-  const revealScriptPath = require.resolve("reveal.js");
-  const revealCssPath = require.resolve("reveal.js/reveal.css");
   const mermaidScriptPath = require.resolve("mermaid/dist/mermaid.min.js");
   const files = [
     { path: "index.html", content: renderPresentation(model, plan) },
-    { path: "assets/reveal.js", content: await readFile(revealScriptPath, "utf8") },
-    { path: "assets/reveal.css", content: await readFile(revealCssPath, "utf8") },
     { path: "assets/mermaid.js", content: await readFile(mermaidScriptPath, "utf8") },
     { path: "assets/site.css", content: presentationCss() },
     { path: "assets/site.js", content: presentationBootScript() },

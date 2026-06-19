@@ -90,7 +90,7 @@ function createFetchJson(options: GitHubClientOptions): (url: string) => Promise
     const response = await fetchImpl(url, {
       headers: {
         Accept: "application/vnd.github+json",
-        "User-Agent": "RepoSite",
+        "User-Agent": "SilentForge",
         ...(options.token ? { Authorization: `Bearer ${options.token}` } : {})
       }
     });

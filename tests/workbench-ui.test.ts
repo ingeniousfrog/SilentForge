@@ -11,15 +11,16 @@ describe("workbenchHtml", () => {
     expect(html).toContain('data-mode="idle"');
     expect(html).toContain('id="repo-url"');
     expect(html).toContain('id="history-list"');
-    expect(html).toContain("reposite.recentRepositories");
+    expect(html).toContain("silentforge.recentRepositories");
     expect(html).toContain('id="status-pill"');
     expect(html).toContain('data-tab="wiki"');
     expect(html).toContain('data-tab="preview"');
     expect(html).toContain('id="download"');
     expect(html).toContain('id="use-ai"');
     expect(html).toContain("extracted repository information is sent to OpenAI");
-    expect(html).toContain('src="/preview/\' + state.job.id + \'/');
+    expect(html).toContain('class="preview-frame"');
     expect(html).toContain("Enter a GitHub repository URL first.");
+    expect(html).toContain("SilentForge Workbench");
   });
 
   it("renders generation options and repository readiness diagnostics hooks", () => {
@@ -32,11 +33,19 @@ describe("workbenchHtml", () => {
     expect(html).toContain("generationOptions");
     expect(html).toContain("Repository Readiness");
     expect(html).toContain("renderDiagnostics");
+    expect(html).toContain("Dark Signal");
+    expect(html).toContain("Output settings");
+    expect(html).toContain("Generated site");
+    expect(html).toContain("info-tooltip");
+    expect(html).toContain("What do output settings control?");
+    expect(html).toContain("dimension-grid");
+    expect(html).toContain("feature-list");
   });
 
   it("keeps UI markup, styles, and browser script in focused modules", () => {
     expect(workbenchTemplate("styles", "script")).toContain("<style>styles</style>");
     expect(workbenchStyles()).toContain(".search-console");
+    expect(workbenchStyles()).toContain("--bg:");
     expect(workbenchClientScript()).toContain("collectGenerationOptions");
   });
 });

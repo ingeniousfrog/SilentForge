@@ -10,7 +10,10 @@ describe("createCli", () => {
     expect(commandNames).toEqual(["init", "web"]);
   });
 
-  it("does not exit on error while imported", () => {
-    expect(createCli().name()).toBe("reposite");
+  it("registers init generation option flags", () => {
+    const init = createCli().commands.find((command) => command.name() === "init");
+    expect(init?.options.map((option) => option.long)).toEqual(
+      expect.arrayContaining(["--output", "--ai", "--mode", "--theme", "--chapters", "--token"])
+    );
   });
 });

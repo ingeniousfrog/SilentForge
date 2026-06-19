@@ -7,6 +7,7 @@ import type {
   PresentationTheme,
   SiteModel
 } from "../types.js";
+import { stripInlineMarkdown } from "../shared/markdown.js";
 import { selectReadmeInsights } from "./readme.js";
 
 const allowedSourceRefs = new Set([
@@ -218,10 +219,7 @@ function chapter(
 
 function normalizeSummary(summary: string | undefined): string | undefined {
   if (!summary) return undefined;
-  const normalized = summary
-    .replace(/<[^>]+>/g, " ")
-    .trim()
-    .replace(/\s+/g, " ");
+  const normalized = stripInlineMarkdown(summary);
   if (normalized.length === 0) return undefined;
   if (normalized.length <= maxChapterSummaryLength) return normalized;
   return `${normalized.slice(0, maxChapterSummaryLength - 1).trimEnd()}…`;

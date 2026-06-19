@@ -5,11 +5,14 @@ import { createPresentationPlan } from "../presentation/ai.js";
 import { generateStaticSite } from "../site/generator.js";
 import { parseGitHubRepoUrl } from "../github/url.js";
 
+import type { PresentationGenerationOptions } from "../types.js";
+
 export type InitOptions = {
   readonly outputDir?: string;
   readonly token?: string;
   readonly cwd?: string;
   readonly ai?: boolean;
+  readonly generationOptions?: PresentationGenerationOptions;
 };
 
 export type InitResult = {
@@ -25,7 +28,10 @@ export async function initRepoSite(githubRepoUrl: string, options: InitOptions =
     token: options.token ?? process.env.GITHUB_TOKEN
   });
   const model = createSiteModel(snapshot);
-  const presentationPlan = await createPresentationPlan(model, { useAi: options.ai });
+  const presentationPlan = await createPresentationPlan(model, {
+    useAi: options.ai,
+    generationOptions: options.generationOptions
+  });
 
   await generateStaticSite(model, outputDir, { presentationPlan });
 

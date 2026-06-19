@@ -5,19 +5,22 @@ import {
   selectReadmeInsights,
   summarizeMarkdown
 } from "../presentation/readme.js";
+import { renderInlineMarkdown, stripInlineMarkdown } from "../shared/markdown.js";
 import { escapeHtml, safeExternalUrl } from "./security.js";
 
 export function renderPresentation(model: SiteModel, plan: PresentationPlan): string {
   const slides = plan.chapters.map((chapter, index) => renderChapter(model, plan, chapter, index)).join("");
   const navigation = renderNavigation(plan);
-  const description = model.readme.summary ?? model.repository.description ?? model.repository.fullName;
+  const description = stripInlineMarkdown(
+    model.readme.summary ?? model.repository.description ?? model.repository.fullName
+  );
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escapeHtml(
     description
-  )}"><title>${escapeHtml(model.readme.title ?? model.repository.name)}</title><link rel="stylesheet" href="assets/reveal.css"><link rel="stylesheet" href="assets/site.css"></head><body data-theme="${escapeHtml(
+  )}"><title>${escapeHtml(model.readme.title ?? model.repository.name)}</title><link rel="stylesheet" href="assets/site.css"></head><body data-theme="${escapeHtml(
     plan.theme
   )}" class="story"><div class="site-badge">${escapeHtml(
     model.repository.fullName
-  )} · ${escapeHtml(plan.mode)}</div>${navigation}<div class="reveal"><div class="slides">${slides}</div></div><script src="assets/mermaid.js"></script><script src="assets/reveal.js"></script><script src="assets/site.js"></script></body></html>`;
+  )} · ${escapeHtml(plan.mode)}</div>${navigation}<main class="story-chapters">${slides}</main><script src="assets/mermaid.js"></script><script src="assets/site.js"></script></body></html>`;
 }
 
 function renderChapter(
@@ -35,7 +38,7 @@ function renderChapter(
 function renderChapterContent(model: SiteModel, plan: PresentationPlan, chapter: PresentationChapter): string {
   const heading = `<p class="kicker">${escapeHtml(chapter.kind)}</p><h${chapter.kind === "hero" ? "1" : "2"}>${escapeHtml(
     chapter.title
-  )}</h${chapter.kind === "hero" ? "1" : "2"}>${chapter.summary ? `<p class="lede">${escapeHtml(chapter.summary)}</p>` : ""}`;
+  )}</h${chapter.kind === "hero" ? "1" : "2"}>${renderChapterLede(model, chapter)}`;
   if (chapter.kind === "hero") return `${heading}${topicTags(model)}${metrics(model)}${chapterPreview(
     plan
   )}<div class="hero-actions">${primaryLinks(model)}</div>`;
@@ -49,7 +52,7 @@ function renderChapterContent(model: SiteModel, plan: PresentationPlan, chapter:
         `<article class="card feature-card"><span class="section-index">${String(index + 1).padStart(
           2,
           "0"
-        )}</span><p>${escapeHtml(feature)}</p></article>`
+        )}</span><p>${renderInlineMarkdown(feature)}</p></article>`
     )
     .join("")}</div>${repositorySnapshot(model)}${overflowNote(
     model.readme.features.length,
@@ -121,30 +124,15 @@ function renderChapterContent(model: SiteModel, plan: PresentationPlan, chapter:
 }
 
 function renderNavigation(plan: PresentationPlan): string {
-  const categories = [
-    { key: "overview", label: "Overview", kinds: ["hero", "features"] },
-    { key: "resources", label: "Resources", kinds: ["resources"] },
-    { key: "code-wiki", label: "Code Wiki", kinds: ["usage", "readme-insights", "technology", "architecture"] },
-    { key: "preview", label: "Preview", kinds: ["visuals"] }
-  ];
-  const groups = categories
-    .map((category, categoryIndex) => {
-      const items = plan.chapters
-        .map((chapter, index) => ({ chapter, index }))
-        .filter(({ chapter }) => category.kinds.includes(chapter.kind))
-        .map(
-          ({ chapter, index }) =>
-            `<button type="button" aria-controls="${escapeHtml(chapter.id)}" data-slide-index="${index}">${escapeHtml(
-              chapter.title
-            )}</button>`
-        )
-        .join("");
-      return `<details class="category-menu" data-category-key="${escapeHtml(category.key)}"${
-        categoryIndex === 0 ? " open" : ""
-      }><summary>${escapeHtml(category.label)}</summary><div class="chapter-list">${items}</div></details>`;
-    })
+  const pills = plan.chapters
+    .map(
+      (chapter, index) =>
+        `<button type="button" class="chapter-pill" aria-controls="${escapeHtml(chapter.id)}" data-chapter-index="${index}">${escapeHtml(
+          chapter.title
+        )}</button>`
+    )
     .join("");
-  return `<nav id="chapter-nav" class="chapter-tabs" aria-label="Page chapters"><div class="category-list">${groups}</div><div id="reading-progress" aria-hidden="true"><span></span></div></nav>`;
+  return `<nav id="chapter-nav" class="chapter-nav" aria-label="Page chapters"><div class="chapter-pills">${pills}</div><div id="reading-progress" aria-hidden="true"><span></span></div></nav>`;
 }
 
 function chapterContext(label: string, description: string): string {
@@ -166,9 +154,9 @@ function chapterPreview(plan: PresentationPlan): string {
 function chapterFooter(plan: PresentationPlan, index: number): string {
   const next = plan.chapters[index + 1];
   if (!next) return `<footer class="chapter-footer"><a class="detail-link" href="#project">Back to top ↑</a></footer>`;
-  return `<footer class="chapter-footer"><button class="chapter-next" type="button" data-next-chapter="${
+  return `<footer class="chapter-footer"><button class="chapter-next-subtle" type="button" data-next-chapter="${
     index + 1
-  }"><small>Next chapter</small><strong>${escapeHtml(next.title)}</strong><span aria-hidden="true">↓</span></button></footer>`;
+  }">Next: ${escapeHtml(next.title)} <span aria-hidden="true">→</span></button></footer>`;
 }
 
 function commandPreview(label: string, content?: string): string {
@@ -191,8 +179,17 @@ function renderInsightCodeBlock(
   return `<code>${escapeHtml(codeBlock.code.split("\n").slice(0, 3).join("\n"))}</code>`;
 }
 
+function renderChapterLede(model: SiteModel, chapter: PresentationChapter): string {
+  const summary =
+    chapter.kind === "hero"
+      ? model.readme.summary ?? model.repository.description ?? chapter.summary
+      : chapter.summary;
+  if (!summary) return "";
+  return `<p class="lede">${renderInlineMarkdown(summary)}</p>`;
+}
+
 function summaryParagraph(summary: string): string {
-  return summary.trim().length > 0 ? `<p>${escapeHtml(summary)}</p>` : "";
+  return summary.trim().length > 0 ? `<p>${renderInlineMarkdown(summary)}</p>` : "";
 }
 
 function commandOverflow(model: SiteModel): string {
@@ -200,19 +197,19 @@ function commandOverflow(model: SiteModel): string {
   const usageOverflow = Math.max((model.readme.usage?.split("\n").length ?? 0) - 5, 0);
   const totalOverflow = installOverflow + usageOverflow;
   if (totalOverflow <= 0) return "";
-  return `<details class="chapter-more"><summary>${totalOverflow} extra command lines kept out of the overview</summary><p>Open the installation and usage detail pages for the full commands.</p></details>`;
+  return `<details class="show-more"><summary>Show ${totalOverflow} more command lines</summary><div class="show-more-body"><p>Open the installation and usage detail pages for the full commands.</p></div></details>`;
 }
 
 function readmeOverflow(model: SiteModel): string {
   if (model.readme.sections.length <= 0) return "";
-  return `<details class="chapter-more"><summary>Full README sections live in the detail page</summary><p>The overview keeps only summaries and short code previews so this chapter stays scannable.</p></details>`;
+  return `<details class="show-more"><summary>Show full README sections</summary><div class="show-more-body"><p>The overview keeps only summaries and short code previews so this chapter stays scannable.</p></div></details>`;
 }
 
 function overflowNote(total: number, visible: number, label: string, href: string): string {
   if (total <= visible) return "";
-  return `<details class="chapter-more"><summary>${total - visible} more ${label}</summary><p><a href="${escapeHtml(
+  return `<details class="show-more"><summary>Show ${total - visible} more ${label}</summary><div class="show-more-body"><p><a href="${escapeHtml(
     href
-  )}">Open the detail page for the full list.</a></p></details>`;
+  )}">Open the detail page for the full list.</a></p></div></details>`;
 }
 
 function releaseSummary(model: SiteModel): string {

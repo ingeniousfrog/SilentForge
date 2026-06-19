@@ -4,7 +4,7 @@ export function workbenchTemplate(styles: string, clientScript: string): string 
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>RepoSite Workbench</title>
+    <title>SilentForge Workbench</title>
     <style>${styles}</style>
   </head>
   <body>
@@ -13,8 +13,8 @@ export function workbenchTemplate(styles: string, clientScript: string): string 
         <div class="search-console">
           <div class="brand-row">
             <div>
-              <div class="eyebrow">RepoSite local intelligence workbench</div>
-              <h1>Forge repository signals into a site.</h1>
+              <div class="eyebrow">SilentForge Workbench</div>
+              <h1>Turn a GitHub repository into a static presentation site.</h1>
             </div>
             <div class="beacon" id="mode-label">standby</div>
           </div>
@@ -28,38 +28,88 @@ export function workbenchTemplate(styles: string, clientScript: string): string 
             <p class="hint" id="form-hint">Paste a public GitHub repository URL or owner/repo shorthand.</p>
             <label class="ai-option">
               <input id="use-ai" type="checkbox" />
-              <span><strong>AI-assisted structure</strong>When enabled, extracted repository information is sent to OpenAI to arrange the presentation. Repository facts remain source-bound, and failures fall back to local rules.</span>
+              <span><strong>AI-assisted structure.</strong> When enabled, extracted repository information is sent to OpenAI to arrange the presentation. Repository facts remain source-bound, and failures fall back to local rules.</span>
             </label>
-            <section class="generation-options" aria-label="Generation options">
-              <div class="option-grid">
-                <label>
-                  <span>Mode</span>
-                  <select id="generation-mode">
-                    <option value="auto">Auto</option>
-                    <option value="developer-deck">Developer docs</option>
-                    <option value="architecture-map">Architecture handoff</option>
-                    <option value="visual-showcase">Visual showcase</option>
-                    <option value="compact-story">Compact story</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Theme</span>
-                  <select id="generation-theme">
-                    <option value="auto">Auto</option>
-                    <option value="signal-dark">signal-dark</option>
-                    <option value="editorial-light">editorial-light</option>
-                    <option value="blueprint">blueprint</option>
-                  </select>
-                </label>
+            <section class="output-settings" aria-label="Output settings">
+              <div class="output-settings-header">
+                <div class="output-settings-copy">
+                  <span class="output-settings-badge">Generated site</span>
+                  <div class="output-settings-title-row">
+                    <h2 class="output-settings-title">Output settings</h2>
+                    <span class="info-tip">
+                      <button type="button" class="info-button" aria-label="What do output settings control?">i</button>
+                      <span class="info-tooltip" role="tooltip">
+                        These options shape the static site files SilentForge generates: index.html, detail pages, Preview, and ZIP download.
+                        They do not change this Workbench interface.
+                        Mode controls narrative structure. Theme controls colors and typography on every generated page.
+                        Chapter toggles include or omit sections when the repository has matching content.
+                      </span>
+                    </span>
+                  </div>
+                  <p class="output-settings-lead">Applies to Preview, ZIP, and every generated HTML page—not this Workbench UI.</p>
+                </div>
               </div>
-              <div class="chapter-options" aria-label="Chapter switches">
-                <label><input type="checkbox" data-chapter-toggle="features" checked /> Features</label>
-                <label><input type="checkbox" data-chapter-toggle="visuals" checked /> Visuals</label>
-                <label><input type="checkbox" data-chapter-toggle="usage" checked /> Usage</label>
-                <label><input type="checkbox" data-chapter-toggle="readme-insights" checked /> README insights</label>
-                <label><input type="checkbox" data-chapter-toggle="technology" checked /> Technology</label>
-                <label><input type="checkbox" data-chapter-toggle="architecture" checked /> Architecture</label>
-                <label><input type="checkbox" data-chapter-toggle="resources" checked /> Resources</label>
+              <div class="generation-options">
+                <div class="option-grid">
+                  <label>
+                    <span class="option-label-row">
+                      Mode
+                      <span class="info-tip info-tip-inline">
+                        <button type="button" class="info-button" aria-label="What does Mode control?">i</button>
+                        <span class="info-tooltip" role="tooltip">
+                          Chooses how the repository story is arranged: developer docs, architecture handoff, visual showcase, or a compact narrative.
+                          Auto picks based on README, screenshots, and codebase signals.
+                        </span>
+                      </span>
+                    </span>
+                    <select id="generation-mode">
+                      <option value="auto">Auto</option>
+                      <option value="developer-deck">Developer docs</option>
+                      <option value="architecture-map">Architecture handoff</option>
+                      <option value="visual-showcase">Visual showcase</option>
+                      <option value="compact-story">Compact story</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span class="option-label-row">
+                      Theme
+                      <span class="info-tip info-tip-inline">
+                        <button type="button" class="info-button" aria-label="What does Theme control?">i</button>
+                        <span class="info-tooltip" role="tooltip">
+                          Sets the visual style on all generated pages: Dark Signal, Editorial Light, or Blueprint.
+                          Auto follows the selected mode. This is not the Workbench theme.
+                        </span>
+                      </span>
+                    </span>
+                    <select id="generation-theme">
+                      <option value="auto">Auto</option>
+                      <option value="signal-dark">Dark Signal</option>
+                      <option value="editorial-light">Editorial Light</option>
+                      <option value="blueprint">Blueprint</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="chapter-options-header">
+                  <span class="option-label-row">
+                    Chapters
+                    <span class="info-tip info-tip-inline">
+                      <button type="button" class="info-button" aria-label="What do chapter toggles control?">i</button>
+                      <span class="info-tooltip" role="tooltip">
+                        Turn sections on or off in the generated presentation. Empty sections are skipped even when enabled.
+                        The hero chapter is always included.
+                      </span>
+                    </span>
+                  </span>
+                </div>
+                <div class="chapter-options" aria-label="Chapter switches">
+                  <label><input type="checkbox" data-chapter-toggle="features" checked /> Features</label>
+                  <label><input type="checkbox" data-chapter-toggle="visuals" checked /> Visuals</label>
+                  <label><input type="checkbox" data-chapter-toggle="usage" checked /> Usage</label>
+                  <label><input type="checkbox" data-chapter-toggle="readme-insights" checked /> README insights</label>
+                  <label><input type="checkbox" data-chapter-toggle="technology" checked /> Technology</label>
+                  <label><input type="checkbox" data-chapter-toggle="architecture" checked /> Architecture</label>
+                  <label><input type="checkbox" data-chapter-toggle="resources" checked /> Resources</label>
+                </div>
               </div>
             </section>
           </form>

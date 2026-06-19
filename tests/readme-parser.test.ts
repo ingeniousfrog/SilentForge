@@ -17,6 +17,16 @@ describe("parseReadme", () => {
     );
   });
 
+  it("strips inline markdown markers from the selected summary", () => {
+    const result = parseReadme(
+      "# DwarfStar\n\n**DwarfStar** is a small native inference engine optimized first for **DeepSeek V4 Flash**."
+    );
+
+    expect(result.summary).toBe(
+      "DwarfStar is a small native inference engine optimized first for DeepSeek V4 Flash."
+    );
+  });
+
   it("extracts core product documentation without inventing missing content", () => {
     const parsed = parseReadme(`# WidgetKit
 

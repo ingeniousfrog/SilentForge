@@ -160,8 +160,9 @@ describe("generateStaticSite", () => {
     await generateStaticSite(createModel(), outputDir);
 
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain("WidgetKit");
-    await expect(readFile(join(outputDir, "assets/reveal.js"), "utf8")).resolves.toContain("Reveal");
     await expect(readFile(join(outputDir, "assets/mermaid.js"), "utf8")).resolves.toContain("mermaid");
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain("reveal.js");
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain("reveal.css");
     await expect(readFile(join(outputDir, "details/architecture.html"), "utf8")).resolves.toContain("Architecture");
     await expect(readFile(join(outputDir, "data/site.json"), "utf8")).resolves.toContain("presentationPlan");
     await expect(readFile(join(outputDir, "data/site.json"), "utf8")).resolves.toContain("diagnostics");
@@ -192,39 +193,26 @@ describe("generateStaticSite", () => {
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain('id="previous-chapter"');
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain('id="chapter-count"');
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain('class="chapter-controls"');
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('class="chapter-tabs"');
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('class="category-menu"');
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('data-category-key="overview"');
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('data-category-key="resources"');
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('data-category-key="code-wiki"');
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('data-category-key="preview"');
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain("<summary>Overview</summary>");
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain("<summary>Resources</summary>");
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain("<summary>Code Wiki</summary>");
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain("<summary>Preview</summary>");
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('class="chapter-nav"');
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('class="chapter-pills"');
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('class="chapter-pill"');
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('class="story-chapters"');
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain('class="category-menu"');
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain("<summary>Overview</summary>");
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain(
-      'data-slide-index="3">From clone to first run</button>'
+      'data-chapter-index="3">From clone to first run</button>'
     );
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain(
-      'data-slide-index="4">Inside the project</button>'
+      'data-chapter-index="4">Inside the project</button>'
     );
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain(
-      'data-slide-index="7">Keep exploring</button>'
-    );
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain(
-      'data-slide-index="3"><span>04</span>'
-    );
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain(
-      'data-slide-index="4"><span>05</span>'
-    );
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain(
-      'data-slide-index="7"><span>08</span>'
+      'data-chapter-index="7">Keep exploring</button>'
     );
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain('role="tablist"');
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain('role="tab"');
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('class="chapter-footer"');
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('data-next-chapter="');
-    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('class="chapter-more"');
+    await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('class="show-more"');
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.toContain('class="story"');
     await expect(readFile(join(outputDir, "index.html"), "utf8")).resolves.not.toContain(
       "Use the chapter tabs"
@@ -251,7 +239,13 @@ describe("generateStaticSite", () => {
       "document.readyState"
     );
     await expect(readFile(join(outputDir, "assets/site.js"), "utf8")).resolves.toContain(
-      "toggle"
+      "[data-chapter-index]"
+    );
+    await expect(readFile(join(outputDir, "assets/site.js"), "utf8")).resolves.toContain(
+      ".story-chapters > section"
+    );
+    await expect(readFile(join(outputDir, "assets/site.js"), "utf8")).resolves.not.toContain(
+      "category-menu"
     );
     await expect(readFile(join(outputDir, "assets/site.js"), "utf8")).resolves.toContain(
       "diagram-error"
@@ -265,8 +259,8 @@ describe("generateStaticSite", () => {
     await expect(readFile(join(outputDir, "assets/site.css"), "utf8")).resolves.toContain(
       "position: sticky"
     );
-    await expect(readFile(join(outputDir, "assets/site.css"), "utf8")).resolves.not.toContain(
-      "overflow-x: auto"
+    await expect(readFile(join(outputDir, "assets/site.css"), "utf8")).resolves.toContain(
+      ".chapter-pills"
     );
     await expect(readFile(join(outputDir, "assets/site.css"), "utf8")).resolves.not.toContain(
       "padding-right: 304px"
