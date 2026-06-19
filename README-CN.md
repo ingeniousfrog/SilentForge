@@ -1,83 +1,190 @@
 # SilentForge
 
-**将 GitHub 仓库一键生成为可离线打开的静态演示站点与轻量代码百科。**
+**将公开 GitHub 仓库转化为可离线部署、以事实为依据的静态演示站点。**
 
-SilentForge 提供 `reposite` 命令行工具与本地 **Workbench** 网页界面。它会读取公开仓库中的 README、元数据、文件树、Release 等信号，输出可直接打开、预览或部署到任意静态托管的 HTML 文件。
+SilentForge 是一套本地优先工具链：读取仓库中的 README、元数据、文件树、Release 及轻量代码分析信号，输出可预览、可编辑、可打包 ZIP、可部署到任意静态托管的自包含 HTML 产物。项目以 `reposite` CLI 与浏览器 **Workbench** 两种形态交付。
 
-默认流程是**确定性的、以仓库事实为准**：只提取仓库里真实存在的内容，不会臆造产品卖点。可选的 OpenAI 辅助规划可以重新编排叙事结构，但仍不能引入新事实或任意 HTML/CSS。
+默认流水线**确定且以仓库事实为准**：只呈现仓库中真实存在的内容，无证据的章节自动省略。可选的 OpenAI 辅助规划可调整叙事顺序，但每条信息必须能回溯到已提取的仓库数据；失败时回退至本地规则引擎。
 
 [English](./README.md)
 
+---
+
+## 目录
+
+- [产品概览](#产品概览)
+- [工作原理](#工作原理)
+- [核心能力](#核心能力)
+- [环境要求](#环境要求)
+- [安装与构建](#安装与构建)
+- [Workbench](#workbench)
+- [CLI 参考](#cli-参考)
+- [生成产物](#生成产物)
+- [演示模式与主题](#演示模式与主题)
+- [国际化说明](#国际化说明)
+- [环境变量](#环境变量)
+- [设计保证](#设计保证)
+- [开发指南](#开发指南)
+- [许可证](#许可证)
+
+---
+
+## 产品概览
+
+SilentForge 面向需要**可信、可离线传播的项目叙事**，又不想搭建文档平台或从零手写落地页的维护者与团队。
+
+| 入口 | 用途 |
+|------|------|
+| **`reposite init`** | 命令行一次性生成至本地目录 |
+| **Workbench** | 本地 Web 界面：任务流、诊断、预览、ZIP 导出 |
+| **生成站点** | 纯 HTML / CSS / JS / JSON，可编辑、可任意托管 |
+
+两种入口共用同一套生成引擎，Preview、ZIP 下载与 CLI 产物在结构上一致。
+
+---
+
+## 工作原理
+
+```mermaid
+flowchart LR
+  input[GitHub 仓库 URL]
+  fetch[拉取快照]
+  parse[解析 README 与元数据]
+  analyze[分析代码库信号]
+  plan[构建演示规划]
+  render[渲染静态站点]
+  output[HTML CSS JS JSON ZIP]
+
+  input --> fetch --> parse --> analyze --> plan --> render --> output
+```
+
+1. **采集** — 解析 `owner/repo`，通过 GitHub API 获取元数据、README、Release 与文件树。
+2. **提取** — 结构化解析 README（特性、安装、用法、FAQ、截图、章节），并生成轻量代码百科（技术栈、入口文件、配置、模块地图、Mermaid 图）。
+3. **诊断** — 评估仓库就绪度，在发布前给出评分、短板与改进建议。
+4. **规划** — 选择演示模式、主题与章节（默认规则引擎；可选 OpenAI，带 Schema 校验）。
+5. **输出** — 写入自包含静态站点：滚动叙事主页、详情页、内置 Mermaid 运行时（无需 CDN）。
+
+---
+
 ## 核心能力
 
-- **滚动叙事演示页** — 粘性章节导航、详情页、本地 Mermaid 结构图
-- **代码百科** — 技术栈、入口文件、配置信号、模块地图、目录摘要
-- **仓库就绪度诊断** — 发布前给出评分、短板与改进建议
-- **本地 Workbench** — 粘贴 URL、查看生成步骤、浏览资源、预览产物、下载 ZIP
-- **中英双语壳层** — Workbench 与生成站点的框架文案支持 **EN / 中文**（README 正文保持原样）
-- **纯静态产物** — HTML、CSS、JavaScript、JSON，可手工二次编辑
+### 演示层
+
+- 带粘性章节导航与详情路由的滚动叙事 `index.html`
+- 三种生成站点视觉主题：Dark Signal、Editorial Light、Blueprint
+- 五种叙事模式：开发者文档、架构交接、视觉展示、精简叙事，或根据仓库信号自动选择
+- 可配置章节开关；无内容的章节自动跳过
+
+### 代码百科
+
+- 技术栈、入口文件与配置文件信号检测
+- 目录摘要、模块地图及本地渲染的 Mermaid 架构图
+- 检测结论均来自仓库信号，不臆造框架或结构
+
+### 仓库诊断
+
+- 就绪度评分，以及分级优势、缺口与可执行建议
+- 在 Workbench **Overview** 面板展示
+
+### Workbench
+
+- 搜索优先界面：粘贴 URL、SSE 实时任务流、四 Tab 结果检视
+- **Overview** — 诊断与摘要指标
+- **Resources** — 解析后的 README、元数据与原始信号
+- **Code Wiki** — 代码库分析结果
+- **Preview** — 生成站点 iframe 预览；完成后自动打开
+- ZIP 下载与 Preview 完全一致
+- EN / 中文语言胶囊；Dark / Light 外观切换（未手动选择前默认跟随系统 `prefers-color-scheme`）
+
+### 产物约定
+
+- 消费侧无需构建步骤——直接打开 `index.html` 或上传目录
+- Preview 与 ZIP 始终指向同一套文件
+- 输出目录内的 README 说明部署方式
+
+---
 
 ## 环境要求
 
-- Node.js **20+**
-- 公开的 `github.com` 仓库地址（或 `owner/repo` 简写）
-- 可选：`GITHUB_TOKEN` 提高 GitHub API 限额
-- 可选：`OPENAI_API_KEY` 启用 `--ai` 演示结构规划
+| 项目 | 说明 |
+|------|------|
+| **Node.js 20+** | CLI 与 Workbench 均需 |
+| **公开 GitHub 仓库** | `https://github.com/owner/repo` 或 `owner/repo` 简写 |
+| **`GITHUB_TOKEN`** | 可选；建议配置以提高 API 限额 |
+| **`OPENAI_API_KEY`** | 可选；启用 AI 辅助演示规划（`--ai` 或 Workbench 复选框） |
 
-## 快速开始
+---
+
+## 安装与构建
 
 ```sh
-git clone <this-repo>
+git clone https://github.com/ingeniousfrog/SilentForge.git
 cd SilentForge
 npm install
 npm run build
 ```
 
-用 CLI 生成站点：
+CLI 生成示例：
 
 ```sh
 node dist/cli.js init openai/openai-node
+# 全局链接后亦可：
+reposite init openai/openai-node
 ```
 
-在输出目录中直接用浏览器打开 `index.html`，或用任意静态文件服务器托管该目录。
+在输出目录用浏览器打开 `index.html`，或使用任意静态文件服务器托管。
+
+---
 
 ## Workbench
 
-从源码启动本地 Web 界面：
+从源码启动：
 
 ```sh
 npm run web
 ```
 
-浏览器访问 [http://127.0.0.1:4177/](http://127.0.0.1:4177/)
+访问 [http://127.0.0.1:4177/](http://127.0.0.1:4177/)
 
-指定端口：
-
-```sh
-npm run web -- --port 4188
-```
-
-验证打包后的 CLI 路径：
+自定义地址或端口：
 
 ```sh
-npm run build
-npm run web:dist
+npm run web -- --host 127.0.0.1 --port 4188
 ```
 
-Workbench 中可以：
+使用编译后的 CLI 入口：
 
-1. 点击右上角 **EN | 中文** 胶囊切换语言（写入 `localStorage`，键名 `silentforge.locale`）
-2. 粘贴 GitHub 地址并点击 **Generate**
-3. 在 **Overview / Resources / Code Wiki / Preview** 中查看结果
-4. 下载与预览一致的 ZIP 静态包
+```sh
+npm run build && npm run web:dist
+```
 
-语言切换会立即更新 Workbench 文案，并将 `locale` 传入下一次生成任务，影响 Preview、ZIP 及所有生成页面的框架文案。
+### 使用流程
+
+1. **外观** — 顶栏切换 **Dark / Light**（默认跟随系统；手动选择后写入 `silentforge.uiTheme`）。
+2. **语言** — 切换 **EN / 中文**（写入 `silentforge.locale`；影响 Workbench 文案与下一次生成任务）。
+3. **目标** — 粘贴公开 GitHub URL 或 `owner/repo`，点击 **Generate**。
+4. **检视** — 跟踪生成流；查看 **Overview**、**Resources**、**Code Wiki**、**Preview**（完成后自动打开）。
+5. **导出** — 下载 ZIP，或 **Back to home** 开始新任务。
+
+### 输出设置
+
+Workbench 的 **Output settings** 仅控制**生成站点**，不改变 Workbench 自身外观：
+
+| 控件 | 作用 |
+|------|------|
+| **Mode** | 叙事结构（`auto`、开发者文档、架构交接、视觉展示、精简叙事） |
+| **Theme** | 生成页面配色（`auto`、Dark Signal、Editorial Light、Blueprint） |
+| **Chapters** | 当仓库有对应内容时，是否包含各章节类型 |
+
+勾选 **AI-assisted structure** 会将提取的仓库数据发送至 OpenAI 进行规划；事实仍受源数据约束；失败或校验不通过时回退本地规则。
+
+---
 
 ## CLI 参考
 
-### `reposite init`
+### `reposite init <github-repo-url>`
 
-从仓库生成静态演示站点：
+从仓库生成静态演示站点。
 
 ```sh
 reposite init https://github.com/openai/openai-node
@@ -87,17 +194,17 @@ reposite init openai/openai-node
 | 选项 | 说明 |
 |------|------|
 | `-o, --output <dir>` | 输出目录（默认：`<repo-name>-site`） |
-| `--ai` | 使用 OpenAI 编排有证据支撑的结构（失败时回退到规则引擎） |
+| `--ai` | 使用 OpenAI 编排有证据支撑的结构（失败时回退规则引擎） |
 | `--mode <mode>` | `auto`、`developer-deck`、`architecture-map`、`visual-showcase`、`compact-story` |
 | `--theme <theme>` | `auto`、`signal-dark`、`editorial-light`、`blueprint` |
-| `--chapters <kinds>` | 逗号分隔的章节类型 |
+| `--chapters <kinds>` | 逗号分隔的章节类型（见[演示模式与主题](#演示模式与主题)） |
 | `--locale <locale>` | 生成站点 UI 语言：`en`（默认）或 `zh` |
 | `--token <token>` | GitHub Token（可回退到 `GITHUB_TOKEN`） |
 
 示例：
 
 ```sh
-# 可选 AI 规划
+# AI 辅助规划
 OPENAI_API_KEY=your_key reposite init openai/openai-node --ai
 
 # 显式指定演示选项
@@ -111,35 +218,51 @@ reposite init openai/openai-node \
 
 ### `reposite web`
 
-启动本地 Workbench：
+启动本地 Workbench 服务。
 
 ```sh
 reposite web
 reposite web --host 127.0.0.1 --port 4177
 ```
 
+---
+
 ## 生成产物
 
-`reposite init` 会写入一套自包含的静态站点：
+`reposite init` 输出自包含目录：
 
 | 路径 | 用途 |
 |------|------|
 | `index.html` | 滚动叙事主页，含粘性章节导航 |
 | `assets/site.css` | 主题样式 |
-| `assets/site.js` | 章节导航、阅读进度、Mermaid 启动逻辑 |
-| `assets/mermaid.js` | 内置 Mermaid 运行时（无需 CDN） |
-| `details/*.html` | 安装、用法、架构、Release、README 章节详情页 |
+| `assets/site.js` | 章节导航、阅读进度、Mermaid 启动 |
+| `assets/mermaid.js` | 内置 Mermaid 运行时（可离线） |
+| `details/*.html` | 安装、用法、架构、Release、README 详情页 |
 | `data/site.json` | 结构化仓库模型与最终演示规划 |
-| `README.md` | 如何打开或部署生成站点的简短说明 |
+| `README.md` | 如何打开或部署生成站点的简要说明 |
 
-内容均来自仓库事实，例如：
+**内容来源**（不臆造）：
 
-- README 标题、摘要、特性、安装/用法、FAQ、截图、链接及长章节
+- README：标题、摘要、特性、安装/用法、FAQ、截图、链接、长章节
 - GitHub 元数据：Stars、Topics、许可证、Release、默认分支、语言、主页
-- 轻量代码百科：目录结构、技术栈、入口文件、配置文件、模块地图、Mermaid 图
-- 仓库就绪度诊断（Workbench Overview 面板也会展示）
+- 代码百科：目录结构、技术栈、入口文件、配置文件、模块地图、Mermaid 图
+- 就绪度诊断（Workbench Overview 同步展示）
 
-## 演示主题
+---
+
+## 演示模式与主题
+
+### 模式
+
+| 模式 | 适用场景 |
+|------|----------|
+| `auto` | 根据 README、截图与代码库信号自动推断 |
+| `developer-deck` | 侧重安装与用法的 API/库项目 |
+| `architecture-map` | 结构或模块信号较强的系统 |
+| `visual-showcase` | README 含截图与视觉内容的项目 |
+| `compact-story` | 小型或早期仓库的精简叙事 |
+
+### 生成站点主题
 
 | 主题 ID | 名称 | 风格 |
 |---------|------|------|
@@ -147,41 +270,76 @@ reposite web --host 127.0.0.1 --port 4177
 | `editorial-light` | Editorial Light | 浅色编辑排版，标题使用衬线字体 |
 | `blueprint` | Blueprint | 工程网格背景 |
 
-在 Workbench 的 **Output settings** 中选择，或通过 CLI 传入 `--theme`。`auto` 会跟随所选演示模式。
+在 Workbench **Output settings** 或 CLI `--theme` 中指定。`auto` 跟随所选演示模式。
+
+### 章节类型
+
+`features`、`visuals`、`usage`、`readme-insights`、`technology`、`architecture`、`resources`
+
+Hero 章节始终保留。已启用但仓库无对应内容的章节会被省略。
+
+---
 
 ## 国际化说明
 
-| 范围 | 是否翻译 |
-|------|----------|
-| Workbench 界面 | 是 — EN / 中文胶囊 |
-| 生成站点框架（导航、标签、页脚、诊断文案等） | 是 — 由 `locale` / `--locale` 控制 |
-| README 与仓库事实内容 | **否** — 始终按仓库原文展示 |
+| 范围 | 是否本地化 | 机制 |
+|------|------------|------|
+| Workbench 界面 | 是 — EN / 中文 | 顶栏语言胶囊（`silentforge.locale`） |
+| Workbench 外观 | 是 — Dark / Light | 顶栏主题胶囊（`silentforge.uiTheme`；未手动选择前跟随系统） |
+| 生成站点框架 | 是 — 导航、标签、页脚、诊断文案 | `--locale` / 生成时的 Workbench 语言 |
+| README 与仓库事实 | **否** | 始终按源仓库原文展示 |
 
-默认语言为 `en`。在 Workbench 切换语言不会追溯翻译历史任务日志，只影响当前界面与下一次生成。
+切换 Workbench 语言不会追溯翻译历史任务日志，只影响当前界面与下一次生成。
+
+---
 
 ## 环境变量
 
 | 变量 | 用途 |
 |------|------|
-| `GITHUB_TOKEN` | GitHub API 访问与速率限制 |
-| `OPENAI_API_KEY` | 可选 `--ai` 演示规划 |
+| `GITHUB_TOKEN` | GitHub API 认证与速率限制 |
+| `OPENAI_API_KEY` | 可选 AI 演示规划（`--ai` 或 Workbench 复选框） |
 | `OPENAI_MODEL` | 覆盖 OpenAI 模型（默认：`gpt-5.5`） |
 
-## 设计原则
+---
 
-- **以仓库为准** — 优先使用仓库内容，不做无依据猜测
-- **不留占位** — 无内容的章节直接省略
-- **产物可编辑** — 纯 HTML / CSS / JS / JSON
-- **预览即产物** — Preview 与 ZIP 使用同一套生成文件
-- **本地优先** — 静态站点，无需托管构建流水线
+## 设计保证
 
-## 开发
+| 原则 | 行为 |
+|------|------|
+| **以仓库为准** | 每条信息可回溯至已提取的仓库数据 |
+| **不留占位** | 无内容章节直接省略，不填充样板文案 |
+| **产物可编辑** | 纯 HTML / CSS / JS / JSON，无专有运行时 |
+| **预览即产物** | Preview、ZIP 与 CLI 输出文件一致 |
+| **本地优先** | 全程在本机运行，无需托管构建流水线 |
+| **AI 优雅降级** | OpenAI 不可用或校验失败时回退规则引擎 |
+
+---
+
+## 开发指南
 
 ```sh
-npm test
-npm run test:coverage
-npm run dev -- init owner/repo
+npm test                 # 单元测试
+npm run test:coverage    # 覆盖率报告
+npm run dev -- init owner/repo   # 通过 tsx 运行 CLI
+npm run web              # 通过 tsx 启动 Workbench
 ```
+
+项目结构（节选）：
+
+```
+src/
+  analyzer/       代码库信号提取
+  commands/       CLI init 命令
+  github/         仓库快照拉取
+  i18n/           中英文文案目录
+  presentation/   演示规划（规则 + 可选 OpenAI）
+  readme/         README 解析
+  site/           静态站点生成
+  workbench/      本地服务、任务存储、UI
+```
+
+---
 
 ## 许可证
 
