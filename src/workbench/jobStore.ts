@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { basename, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
-import type { PresentationGenerationOptions, RepositorySnapshot, SiteModel } from "../types.js";
+import type { AiPlanningConfig, PresentationGenerationOptions, RepositorySnapshot, SiteModel } from "../types.js";
 import { normalizeGithubToken } from "../github/token.js";
 
 export type JobStatus = "queued" | "running" | "complete" | "failed";
@@ -17,6 +17,7 @@ export type WorkbenchJob = {
   readonly id: string;
   readonly repoUrl: string;
   readonly useAi: boolean;
+  readonly aiConfig?: AiPlanningConfig;
   readonly githubToken?: string;
   readonly generationOptions: PresentationGenerationOptions;
   readonly status: JobStatus;
@@ -66,7 +67,8 @@ export class JobStore {
     repoUrl: string,
     useAi = false,
     generationOptions: PresentationGenerationOptions = {},
-    githubToken?: string
+    githubToken?: string,
+    aiConfig?: AiPlanningConfig
   ): Promise<WorkbenchJob> {
     const id = createJobId();
     const workspaceDir = await mkdtemp(join(tmpdir(), "reposite-workbench-"));
@@ -76,6 +78,7 @@ export class JobStore {
       id,
       repoUrl,
       useAi,
+      ...(aiConfig ? { aiConfig } : {}),
       ...(normalizedToken ? { githubToken: normalizedToken } : {}),
       generationOptions,
       status: "queued",

@@ -172,7 +172,7 @@ export type PresentationPlan = {
   readonly locale: Locale;
   readonly chapters: readonly PresentationChapter[];
   readonly detailPages: readonly PresentationDetailPage[];
-  readonly plannedBy: "rules" | "openai";
+  readonly plannedBy: "rules" | "openai" | "codex";
 };
 
 export type PresentationGenerationOptions = {
@@ -180,6 +180,13 @@ export type PresentationGenerationOptions = {
   readonly theme?: PresentationTheme | "auto";
   readonly enabledChapters?: readonly PresentationChapterKind[];
   readonly locale?: Locale;
+};
+
+export type AiPlanningConfig = {
+  readonly openaiApiKey?: string;
+  readonly openaiBaseUrl?: string;
+  readonly openaiModel?: string;
+  readonly codexModel?: string;
 };
 
 export type ProjectProfile = {

@@ -100,7 +100,9 @@ npx silentforge web
 # Custom output directory and locale
 npx silentforge init owner/repo -o my-site --locale zh
 
-# Optional AI-assisted chapter ordering (requires OPENAI_API_KEY)
+# Optional AI-assisted chapter ordering (Codex login preferred; OPENAI_API_KEY as fallback)
+codex login   # once, if using local Codex
+npx silentforge init owner/repo --ai
 OPENAI_API_KEY=sk-… npx silentforge init owner/repo --ai
 ```
 
@@ -167,7 +169,9 @@ flowchart LR
 | **Node.js 20+** | Required for CLI and Workbench |
 | **Public GitHub repository** | `https://github.com/owner/repo` or `owner/repo` shorthand |
 | **`GITHUB_TOKEN`** | Optional; recommended for higher API rate limits (CLI env var or Workbench UI) |
-| **`OPENAI_API_KEY`** | Optional; enables AI-assisted presentation planning (`--ai` or Workbench checkbox) |
+| **`codex login`** | Optional; preferred AI backend for `--ai` when Codex CLI is installed and logged in |
+| **`OPENAI_API_KEY`** | Optional fallback for AI-assisted presentation planning (`--ai` or Workbench checkbox) |
+| **`OPENAI_BASE_URL`** | Optional OpenAI-compatible endpoint (e.g. gpt2cursor bridge) when using `OPENAI_API_KEY` |
 
 ---
 
@@ -332,7 +336,7 @@ Workbench **Output settings** control the **generated site only**—not the Work
 | **Theme** | Generated page palette (`auto`, Dark Signal, Editorial Light, Blueprint) |
 | **Chapters** | Include or omit section types when matching repository content exists |
 
-Optional **AI-assisted structure** sends extracted repository data to OpenAI for planning. Facts remain source-bound; the pipeline falls back to local rules on failure or validation errors.
+Optional **AI-assisted structure** arranges extracted repository data with local Codex when logged in, otherwise with OpenAI when `OPENAI_API_KEY` is set. Facts remain source-bound; the pipeline falls back to local rules on failure or validation errors.
 
 ---
 
@@ -360,8 +364,14 @@ reposite init openai/openai-node
 Examples:
 
 ```sh
-# AI-assisted planning
+# AI-assisted planning (Codex preferred after `codex login`)
+reposite init openai/openai-node --ai
+
+# OpenAI API fallback
 OPENAI_API_KEY=your_key reposite init openai/openai-node --ai
+
+# gpt2cursor-compatible bridge
+OPENAI_BASE_URL=http://127.0.0.1:8787/v1 OPENAI_API_KEY=g2c_… reposite init openai/openai-node --ai
 
 # Explicit presentation options
 reposite init openai/openai-node \
@@ -454,8 +464,12 @@ Switching Workbench locale does not retroactively translate past job events; it 
 | Variable | Purpose |
 |----------|---------|
 | `GITHUB_TOKEN` | GitHub API authentication when the Workbench UI token field is empty, or for CLI runs without `--token` |
-| `OPENAI_API_KEY` | Optional AI presentation planning (`--ai` or Workbench checkbox) |
-| `OPENAI_MODEL` | Override OpenAI model (default: `gpt-5.5`) |
+| `CODEX_PATH` | Optional path to the Codex CLI binary |
+| `CODEX_MODEL` | Optional Codex model override (`-m`) |
+| `OPENAI_API_KEY` | Optional AI presentation planning fallback (`--ai` or Workbench checkbox) |
+| `OPENAI_BASE_URL` | Optional OpenAI-compatible endpoint (e.g. gpt2cursor bridge) |
+| `OPENAI_MODEL` | Override OpenAI/Codex model (default: `gpt-5.5`) |
+| `SILENTFORGE_AI_TIMEOUT_MS` | AI planning timeout in milliseconds (default: `60000` for Codex, `15000` for OpenAI API) |
 
 Workbench-local preferences (browser `localStorage`, not environment variables): `silentforge.locale`, `silentforge.uiTheme`, `silentforge.githubToken` (when "Remember on this device" is enabled).
 

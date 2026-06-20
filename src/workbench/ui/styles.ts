@@ -216,51 +216,113 @@ ${workbenchShellCss()}
         font-size: 0.8125rem;
         text-align: center;
       }
-      .workbench-settings {
-        border: 0;
-        border-radius: var(--radius-md);
-        background: transparent;
+      .settings-launcher {
+        margin-top: 4px;
       }
-      .workbench-settings > summary {
-        list-style: none;
-        cursor: pointer;
-        color: var(--muted);
-        font-size: 0.8125rem;
-        font-weight: 500;
-      }
-      .workbench-settings > summary::-webkit-details-marker {
-        display: none;
-      }
-      .workbench-settings-summary {
+      .settings-launcher-button {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        position: relative;
-        padding-right: 18px;
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        text-align: left;
+        transition: border-color 160ms ease, background 160ms ease;
       }
-      .workbench-settings-summary::after {
-        position: absolute;
-        top: 50%;
-        right: 0;
+      .settings-launcher-button:hover {
+        border-color: var(--line-strong);
+        background: color-mix(in srgb, var(--surface) 88%, var(--cyan) 12%);
+      }
+      .settings-launcher-label {
+        color: var(--text);
+      }
+      .settings-launcher-button::after {
         color: var(--dim);
         font-size: 0.875rem;
-        transform: translateY(-50%);
         content: "›";
-        transition: transform 160ms ease;
-      }
-      .workbench-settings[open] > .workbench-settings-summary::after {
-        transform: translateY(-50%) rotate(90deg);
       }
       .settings-summary {
+        flex: 1;
         color: var(--dim);
         font-size: 0.75rem;
         font-weight: 400;
+        text-align: right;
+      }
+      .settings-dialog,
+      .deploy-dialog {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        background: var(--panel);
+        color: var(--text);
+        padding: 0;
+        max-width: min(760px, calc(100vw - 32px));
+        max-height: calc(100vh - 48px);
+        width: 100%;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+      }
+      .settings-dialog::backdrop,
+      .deploy-dialog::backdrop {
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(4px);
+      }
+      .settings-dialog-header,
+      .deploy-dialog-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--line);
+      }
+      .settings-dialog-title,
+      .deploy-dialog-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 500;
+      }
+      .settings-dialog-lead {
+        margin: 6px 0 0;
+        color: var(--dim);
+        font-size: 0.8125rem;
+        line-height: 1.5;
+      }
+      .settings-dialog-close,
+      .deploy-dialog-close {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 1.25rem;
+        line-height: 1;
+        transition: border-color 160ms ease, color 160ms ease;
+        flex-shrink: 0;
+      }
+      .settings-dialog-close:hover,
+      .deploy-dialog-close:hover {
+        border-color: var(--line-strong);
+        color: var(--text);
+      }
+      .settings-dialog-body,
+      .deploy-dialog-body {
+        padding: 16px 20px 20px;
+        overflow: auto;
+        max-height: calc(100vh - 120px);
       }
       .workbench-settings-body {
         display: grid;
         gap: var(--space-2);
-        padding-top: 12px;
       }
       .settings-section {
         display: grid;
@@ -364,9 +426,54 @@ ${workbenchShellCss()}
         padding: 0;
         accent-color: var(--cyan);
       }
-      .ai-option strong {
-        display: inline;
+      .ai-priority-list {
+        margin: 0;
+        padding-left: 1.1rem;
+        color: var(--muted);
+        font-size: 0.75rem;
+        line-height: 1.6;
+      }
+      .ai-priority-list code {
+        font-family: var(--mono);
+        font-size: 0.72rem;
+      }
+      .ai-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--muted);
+        font-size: 0.75rem;
+        line-height: 1.4;
+      }
+      .ai-status-badge[data-state="ready"] {
+        border-color: color-mix(in srgb, var(--cyan) 35%, var(--line));
         color: var(--text);
+      }
+      .ai-status-badge[data-state="missing"],
+      .ai-status-badge[data-state="logged-out"] {
+        border-color: color-mix(in srgb, var(--amber, #d97706) 35%, var(--line));
+      }
+      .ai-settings-panel {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+      }
+      .ai-settings-panel.is-disabled {
+        opacity: 0.55;
+        pointer-events: none;
+      }
+      .ai-subheading {
+        margin: 0;
+        color: var(--text);
+        font-size: 0.8125rem;
         font-weight: 500;
       }
       .advanced-options {
@@ -374,7 +481,7 @@ ${workbenchShellCss()}
         border-radius: var(--radius-md);
         background: var(--surface);
       }
-      .workbench-settings .generation-options {
+      .workbench-settings-body .generation-options {
         padding-top: 4px;
       }
       .info-tip {
@@ -588,7 +695,7 @@ ${workbenchShellCss()}
         display: none;
       }
       .shell[data-mode="active"] .history,
-      .shell[data-mode="active"] .workbench-settings,
+      .shell[data-mode="active"] .settings-launcher,
       .shell[data-mode="active"] .hint {
         display: none;
       }
@@ -727,57 +834,6 @@ ${workbenchShellCss()}
         min-height: 36px;
         padding: 0 16px;
         font-size: 0.8125rem;
-      }
-      .deploy-dialog {
-        border: 1px solid var(--line);
-        border-radius: var(--radius-lg);
-        background: var(--panel);
-        color: var(--text);
-        padding: 0;
-        max-width: min(760px, calc(100vw - 32px));
-        max-height: calc(100vh - 48px);
-        width: 100%;
-        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
-      }
-      .deploy-dialog::backdrop {
-        background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(4px);
-      }
-      .deploy-dialog-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--line);
-      }
-      .deploy-dialog-title {
-        margin: 0;
-        font-size: 1rem;
-        font-weight: 500;
-      }
-      .deploy-dialog-close {
-        display: grid;
-        place-items: center;
-        width: 32px;
-        height: 32px;
-        border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
-        background: transparent;
-        color: var(--muted);
-        cursor: pointer;
-        font-size: 1.25rem;
-        line-height: 1;
-        transition: border-color 160ms ease, color 160ms ease;
-      }
-      .deploy-dialog-close:hover {
-        border-color: var(--line-strong);
-        color: var(--text);
-      }
-      .deploy-dialog-body {
-        padding: 16px 20px 20px;
-        overflow: auto;
-        max-height: calc(100vh - 120px);
       }
       .deploy-guide-lead {
         margin: 0 0 14px;

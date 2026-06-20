@@ -100,7 +100,9 @@ npx silentforge web
 # 自定义输出目录与语言
 npx silentforge init owner/repo -o my-site --locale zh
 
-# 可选 AI 辅助章节排序（需 OPENAI_API_KEY）
+# 可选 AI 辅助章节排序（优先本机 Codex 登录；OPENAI_API_KEY 为备选）
+codex login   # 使用本地 Codex 时先登录一次
+npx silentforge init owner/repo --ai
 OPENAI_API_KEY=sk-… npx silentforge init owner/repo --ai
 ```
 
@@ -167,7 +169,9 @@ flowchart LR
 | **Node.js 20+** | CLI 与 Workbench 均需 |
 | **公开 GitHub 仓库** | `https://github.com/owner/repo` 或 `owner/repo` 简写 |
 | **`GITHUB_TOKEN`** | 可选；建议配置以提高 API 限额（CLI 环境变量或 Workbench 界面填写） |
-| **`OPENAI_API_KEY`** | 可选；启用 AI 辅助演示规划（`--ai` 或 Workbench 复选框） |
+| **`codex login`** | 可选；安装并登录 Codex CLI 后，`--ai` 优先使用本地 Codex |
+| **`OPENAI_API_KEY`** | 可选；AI 辅助演示规划的备选后端（`--ai` 或 Workbench 复选框） |
+| **`OPENAI_BASE_URL`** | 可选；OpenAI 兼容端点（如 gpt2cursor 桥接），配合 `OPENAI_API_KEY` 使用 |
 
 ---
 
@@ -332,7 +336,7 @@ Workbench 的 **Output settings** 仅控制**生成站点**，不改变 Workbenc
 | **Theme** | 生成页面配色（`auto`、Dark Signal、Editorial Light、Blueprint） |
 | **Chapters** | 当仓库有对应内容时，是否包含各章节类型 |
 
-勾选 **AI-assisted structure** 会将提取的仓库数据发送至 OpenAI 进行规划；事实仍受源数据约束；失败或校验不通过时回退本地规则。
+勾选 **AI-assisted structure** 会优先使用本机已登录的 Codex 编排提取的仓库数据；若未登录 Codex 且设置了 `OPENAI_API_KEY`，则使用 OpenAI。事实仍受源数据约束；失败或校验不通过时回退本地规则。
 
 ---
 
@@ -360,8 +364,14 @@ reposite init openai/openai-node
 示例：
 
 ```sh
-# AI 辅助规划
+# AI 辅助规划（`codex login` 后优先使用 Codex）
+reposite init openai/openai-node --ai
+
+# OpenAI API 备选
 OPENAI_API_KEY=your_key reposite init openai/openai-node --ai
+
+# gpt2cursor 兼容桥接
+OPENAI_BASE_URL=http://127.0.0.1:8787/v1 OPENAI_API_KEY=g2c_… reposite init openai/openai-node --ai
 
 # 显式指定演示选项
 reposite init openai/openai-node \
@@ -454,8 +464,12 @@ Hero 章节始终保留。已启用但仓库无对应内容的章节会被省略
 | 变量 | 用途 |
 |------|------|
 | `GITHUB_TOKEN` | Workbench 界面未填 Token 时的服务端回退，或 CLI 未传 `--token` 时使用 |
-| `OPENAI_API_KEY` | 可选 AI 演示规划（`--ai` 或 Workbench 复选框） |
-| `OPENAI_MODEL` | 覆盖 OpenAI 模型（默认：`gpt-5.5`） |
+| `CODEX_PATH` | 可选，指定 Codex CLI 二进制路径 |
+| `CODEX_MODEL` | 可选，Codex 模型覆盖（`-m`） |
+| `OPENAI_API_KEY` | 可选 AI 演示规划备选（`--ai` 或 Workbench 复选框） |
+| `OPENAI_BASE_URL` | 可选 OpenAI 兼容端点（如 gpt2cursor 桥接） |
+| `OPENAI_MODEL` | 覆盖 OpenAI/Codex 模型（默认：`gpt-5.5`） |
+| `SILENTFORGE_AI_TIMEOUT_MS` | AI 规划超时（毫秒；Codex 默认 `60000`，OpenAI API 默认 `15000`） |
 
 Workbench 本地偏好（浏览器 `localStorage`，非环境变量）：`silentforge.locale`、`silentforge.uiTheme`、`silentforge.githubToken`（勾选「在此设备上记住」时）。
 

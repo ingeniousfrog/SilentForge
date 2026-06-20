@@ -30,13 +30,18 @@ export async function runGenerationJob(store: JobStore, job: WorkbenchJob): Prom
     store.pushEvent(job.id, "step", t(locale, "generator.buildingWiki"));
     const presentationPlan = await createPresentationPlan(model, {
       useAi: job.useAi,
+      aiConfig: job.aiConfig,
       generationOptions: job.generationOptions,
       onFallback: (message) => store.pushEvent(job.id, "step", t(locale, "generator.aiFallback", { message }))
     });
     store.pushEvent(
       job.id,
       "step",
-      presentationPlan.plannedBy === "openai" ? t(locale, "generator.aiPlanned") : t(locale, "generator.rulesPlanned")
+      presentationPlan.plannedBy === "codex"
+        ? t(locale, "generator.codexPlanned")
+        : presentationPlan.plannedBy === "openai"
+          ? t(locale, "generator.aiPlanned")
+          : t(locale, "generator.rulesPlanned")
     );
     store.pushEvent(job.id, "step", t(locale, "generator.writingFiles"));
     await generateStaticSite(model, job.outputDir, { presentationPlan });

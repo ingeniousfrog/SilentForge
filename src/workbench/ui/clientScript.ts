@@ -6,9 +6,9 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
       const uiThemeKey = "silentforge.uiTheme";
       const githubTokenKey = "silentforge.githubToken";
       const rememberGithubTokenKey = "silentforge.rememberGithubToken";
+      const openaiApiKeyKey = "silentforge.openaiApiKey";
+      const rememberAiCredentialsKey = "silentforge.rememberAiCredentials";
       const generationSettingsKey = "silentforge.generationSettings";
-      const settingsOpenKey = "silentforge.settingsOpen";
-      const legacyOutputSettingsKey = "silentforge.outputSettingsOpen";
       const historyKey = "silentforge.recentRepositories";
       const legacyHistoryKey = "reposite.recentRepositories";
       const defaultChapterKinds = [
@@ -25,9 +25,17 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
         githubToken: undefined,
         rememberGithubToken: false,
         useAi: false,
+        openaiApiKey: undefined,
+        openaiBaseUrl: "",
+        openaiModel: "",
+        rememberAiCredentials: false,
         mode: "auto",
         theme: "auto",
         enabledChapters: defaultChapterKinds.slice()
+      };
+      const aiBackendStatus = {
+        codex: { found: false, loggedIn: false, path: "", detail: "" },
+        server: { hasOpenAiKey: false, hasOpenAiBaseUrl: false, hasOpenAiModel: false }
       };
       const state = {
         mode: "idle",
@@ -42,6 +50,12 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
       const input = document.querySelector("#repo-url");
       const startButton = document.querySelector("#start-button");
       const useAiInput = document.querySelector("#use-ai");
+      const aiSettingsPanel = document.querySelector("#ai-settings-panel");
+      const codexStatusEl = document.querySelector("#codex-status");
+      const openaiApiKeyInput = document.querySelector("#openai-api-key");
+      const openaiBaseUrlInput = document.querySelector("#openai-base-url");
+      const openaiModelInput = document.querySelector("#openai-model");
+      const rememberAiCredentialsInput = document.querySelector("#remember-ai-credentials");
       const githubTokenInput = document.querySelector("#github-token");
       const rememberGithubTokenInput = document.querySelector("#remember-github-token");
       const statusEl = document.querySelector("#status");
@@ -54,6 +68,9 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
       const backHomeButton = document.querySelector("#back-home-button");
       const tabsActionsEl = document.querySelector("#tabs-actions");
       const deployButton = document.querySelector("#deploy-button");
+      const settingsDialog = document.querySelector("#settings-dialog");
+      const openSettingsButton = document.querySelector("#open-settings");
+      const settingsDialogClose = document.querySelector("#settings-dialog-close");
       const deployDialog = document.querySelector("#deploy-dialog");
       const deployDialogClose = document.querySelector("#deploy-dialog-close");
       const deployCommandsEl = document.querySelector("#deploy-commands");
@@ -65,11 +82,29 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
       const tabs = Array.from(document.querySelectorAll(".tab"));
       const langPills = Array.from(document.querySelectorAll(".lang-pill"));
       const themePills = Array.from(document.querySelectorAll(".theme-pill"));
-      const workbenchSettingsEl = document.querySelector("#workbench-settings");
-      const settingsSummaryEl = document.querySelector("#settings-summary");
       const saveSettingsButton = document.querySelector("#save-settings");
+      const settingsSummaryEl = document.querySelector("#settings-summary");
       const settingsSaveHintEl = document.querySelector("#settings-save-hint");
       const minGithubTokenLength = 10;
+      const minOpenAiKeyLength = 8;
+
+      function normalizeOpenAiApiKey(value) {
+        if (typeof value !== "string") {
+          return undefined;
+        }
+        const token = value.trim();
+        if (token.length < minOpenAiKeyLength) {
+          return undefined;
+        }
+        return token;
+      }
+
+      function normalizeOptionalText(value) {
+        if (typeof value !== "string") {
+          return "";
+        }
+        return value.trim();
+      }
 
       function normalizeGithubToken(value) {
         if (typeof value !== "string") {
@@ -91,10 +126,19 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
           githubToken: normalizeGithubToken(githubTokenInput ? githubTokenInput.value : undefined),
           rememberGithubToken: Boolean(rememberGithubTokenInput?.checked),
           useAi: Boolean(useAiInput?.checked),
+          openaiApiKey: normalizeOpenAiApiKey(openaiApiKeyInput ? openaiApiKeyInput.value : undefined),
+          openaiBaseUrl: normalizeOptionalText(openaiBaseUrlInput ? openaiBaseUrlInput.value : ""),
+          openaiModel: normalizeOptionalText(openaiModelInput ? openaiModelInput.value : ""),
+          rememberAiCredentials: Boolean(rememberAiCredentialsInput?.checked),
           mode: generationModeEl?.value || "auto",
           theme: generationThemeEl?.value || "auto",
           enabledChapters: enabledChapters.length ? enabledChapters : defaultChapterKinds.slice()
         };
+      }
+
+      function syncAiSettingsPanel() {
+        if (!aiSettingsPanel) return;
+        aiSettingsPanel.classList.toggle("is-disabled", !Boolean(useAiInput?.checked));
       }
 
       function applySettingsToForm(settings) {
@@ -107,6 +151,19 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
         if (useAiInput) {
           useAiInput.checked = Boolean(settings.useAi);
         }
+        if (openaiApiKeyInput) {
+          openaiApiKeyInput.value = settings.openaiApiKey || "";
+        }
+        if (openaiBaseUrlInput) {
+          openaiBaseUrlInput.value = settings.openaiBaseUrl || "";
+        }
+        if (openaiModelInput) {
+          openaiModelInput.value = settings.openaiModel || "";
+        }
+        if (rememberAiCredentialsInput) {
+          rememberAiCredentialsInput.checked = Boolean(settings.rememberAiCredentials);
+        }
+        syncAiSettingsPanel();
         if (rememberGithubTokenInput) {
           rememberGithubTokenInput.checked = Boolean(settings.rememberGithubToken);
         }
@@ -125,11 +182,21 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
             generationSettingsKey,
             JSON.stringify({
               useAi: settings.useAi,
+              openaiBaseUrl: settings.openaiBaseUrl,
+              openaiModel: settings.openaiModel,
+              rememberAiCredentials: settings.rememberAiCredentials,
               mode: settings.mode,
               theme: settings.theme,
               enabledChapters: settings.enabledChapters
             })
           );
+          if (settings.rememberAiCredentials && settings.openaiApiKey) {
+            localStorage.setItem(rememberAiCredentialsKey, "true");
+            localStorage.setItem(openaiApiKeyKey, settings.openaiApiKey);
+          } else {
+            localStorage.removeItem(rememberAiCredentialsKey);
+            localStorage.removeItem(openaiApiKeyKey);
+          }
           if (settings.rememberGithubToken && settings.githubToken) {
             localStorage.setItem(rememberGithubTokenKey, "true");
             localStorage.setItem(githubTokenKey, settings.githubToken);
@@ -147,6 +214,10 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
           githubToken: undefined,
           rememberGithubToken: false,
           useAi: false,
+          openaiApiKey: undefined,
+          openaiBaseUrl: "",
+          openaiModel: "",
+          rememberAiCredentials: false,
           mode: "auto",
           theme: "auto",
           enabledChapters: defaultChapterKinds.slice()
@@ -159,6 +230,9 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
               nextSettings = {
                 ...nextSettings,
                 useAi: Boolean(parsed.useAi),
+                openaiBaseUrl: typeof parsed.openaiBaseUrl === "string" ? parsed.openaiBaseUrl : "",
+                openaiModel: typeof parsed.openaiModel === "string" ? parsed.openaiModel : "",
+                rememberAiCredentials: Boolean(parsed.rememberAiCredentials),
                 mode: typeof parsed.mode === "string" ? parsed.mode : "auto",
                 theme: typeof parsed.theme === "string" ? parsed.theme : "auto",
                 enabledChapters: Array.isArray(parsed.enabledChapters)
@@ -166,6 +240,10 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
                   : defaultChapterKinds.slice()
               };
             }
+          }
+          if (localStorage.getItem(rememberAiCredentialsKey) === "true") {
+            nextSettings.rememberAiCredentials = true;
+            nextSettings.openaiApiKey = normalizeOpenAiApiKey(localStorage.getItem(openaiApiKeyKey));
           }
           if (localStorage.getItem(rememberGithubTokenKey) === "true") {
             nextSettings.rememberGithubToken = true;
@@ -199,7 +277,9 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
           parts.push(t("settingsSummaryToken"));
         }
         if (savedSettings.useAi) {
-          parts.push(t("settingsSummaryAi"));
+          parts.push(
+            aiBackendStatus.codex.loggedIn ? t("settingsSummaryAiCodex") : t("settingsSummaryAiOpenAi")
+          );
         }
         if (savedSettings.mode !== "auto" || savedSettings.theme !== "auto") {
           parts.push(t("settingsSummaryOutput"));
@@ -208,29 +288,88 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
       }
 
       function bindWorkbenchSettings() {
-        if (!workbenchSettingsEl) return;
-        workbenchSettingsEl.querySelectorAll(".info-button").forEach((button) => {
+        if (!settingsDialog) return;
+        settingsDialog.querySelectorAll(".info-button").forEach((button) => {
           button.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopPropagation();
           });
         });
-        try {
-          const stored = localStorage.getItem(settingsOpenKey) || localStorage.getItem(legacyOutputSettingsKey);
-          if (stored === "true") {
-            workbenchSettingsEl.open = true;
-          }
-        } catch {
-          // Ignore storage failures.
-        }
-        workbenchSettingsEl.addEventListener("toggle", () => {
-          try {
-            localStorage.setItem(settingsOpenKey, workbenchSettingsEl.open ? "true" : "false");
-          } catch {
-            // Ignore storage failures.
+        openSettingsButton?.addEventListener("click", () => {
+          void openSettingsDialog();
+        });
+        settingsDialogClose?.addEventListener("click", () => settingsDialog.close());
+        settingsDialog.addEventListener("click", (event) => {
+          if (event.target === settingsDialog) {
+            settingsDialog.close();
           }
         });
         saveSettingsButton?.addEventListener("click", () => saveSettings());
+        useAiInput?.addEventListener("change", () => syncAiSettingsPanel());
+      }
+
+      async function openSettingsDialog() {
+        if (!settingsDialog) return;
+        settingsDialog.showModal();
+        await refreshCodexStatus();
+      }
+
+      async function refreshCodexStatus() {
+        if (!codexStatusEl) return;
+        codexStatusEl.dataset.state = "unknown";
+        codexStatusEl.textContent = t("aiCodexChecking");
+        try {
+          const response = await fetch("/api/ai/status");
+          if (!response.ok) {
+            throw new Error("status unavailable");
+          }
+          const payload = await response.json();
+          aiBackendStatus.codex = payload.codex || aiBackendStatus.codex;
+          aiBackendStatus.server = payload.server || aiBackendStatus.server;
+          renderCodexStatus();
+          renderSettingsSummary();
+        } catch {
+          codexStatusEl.dataset.state = "missing";
+          codexStatusEl.textContent = t("aiCodexMissing");
+        }
+      }
+
+      function renderCodexStatus() {
+        if (!codexStatusEl) return;
+        const codex = aiBackendStatus.codex;
+        if (codex.loggedIn) {
+          codexStatusEl.dataset.state = "ready";
+          codexStatusEl.textContent = codex.path
+            ? t("aiCodexReady") + " " + t("aiCodexDetail", { path: codex.path })
+            : t("aiCodexReady");
+          return;
+        }
+        if (codex.found) {
+          codexStatusEl.dataset.state = "logged-out";
+          codexStatusEl.textContent = t("aiCodexLoggedOut");
+          return;
+        }
+        codexStatusEl.dataset.state = "missing";
+        codexStatusEl.textContent = t("aiCodexMissing");
+      }
+
+      function savedOpenAiApiKey() {
+        return normalizeOpenAiApiKey(savedSettings.openaiApiKey);
+      }
+
+      function buildAiConfigPayload() {
+        const aiConfig = {};
+        const apiKey = savedOpenAiApiKey();
+        if (apiKey) {
+          aiConfig.openaiApiKey = apiKey;
+        }
+        if (savedSettings.openaiBaseUrl) {
+          aiConfig.openaiBaseUrl = savedSettings.openaiBaseUrl;
+        }
+        if (savedSettings.openaiModel) {
+          aiConfig.openaiModel = savedSettings.openaiModel;
+        }
+        return Object.keys(aiConfig).length ? aiConfig : undefined;
       }
 
       function savedGithubToken() {
@@ -324,6 +463,7 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
           renderContent();
         }
         renderSettingsSummary();
+        renderCodexStatus();
       }
 
       langPills.forEach((pill) => {
@@ -349,6 +489,7 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
 
       bindWorkbenchSettings();
       loadSavedSettings();
+      void refreshCodexStatus();
       if (window.location.search) {
         const params = new URLSearchParams(window.location.search);
         const legacyRepoUrl = params.get("repoUrl");
@@ -383,6 +524,7 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
           return;
         }
 
+        saveSettings();
         saveHistory(repoUrl);
         renderHistory();
         renderMode("active");
@@ -406,6 +548,7 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
             repoUrl: repoUrl,
             useAi: savedSettings.useAi,
             ...(savedGithubToken() ? { githubToken: savedGithubToken() } : {}),
+            ...(savedSettings.useAi && buildAiConfigPayload() ? { aiConfig: buildAiConfigPayload() } : {}),
             generationOptions: savedGenerationOptions()
           })
         });
@@ -542,6 +685,9 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
       function resetToHome() {
         if (deployDialog?.open) {
           deployDialog.close();
+        }
+        if (settingsDialog?.open) {
+          settingsDialog.close();
         }
         renderMode("idle");
         shell.dataset.status = "idle";

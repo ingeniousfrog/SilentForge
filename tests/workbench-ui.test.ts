@@ -44,7 +44,10 @@ describe("workbenchHtml", () => {
     expect(html).toContain("buildPagesWorkflow");
     expect(html).toContain("copy-diagnostics-markdown");
     expect(html).toContain('id="use-ai"');
-    expect(html).toContain("extracted repository information is sent to OpenAI");
+    expect(html).toContain('id="openai-api-key"');
+    expect(html).toContain('id="openai-base-url"');
+    expect(html).toContain('id="codex-status"');
+    expect(html).toContain("Enable AI-assisted structure");
     expect(html).toContain('class="preview-frame"');
     expect(html).toContain("Enter a GitHub repository URL first.");
     expect(html).toContain("SilentForge Workbench");
@@ -61,7 +64,8 @@ describe("workbenchHtml", () => {
     expect(html).toContain("Repository Readiness");
     expect(html).toContain("renderDiagnostics");
     expect(html).toContain("Dark Signal");
-    expect(html).toContain('id="workbench-settings"');
+    expect(html).toContain('id="settings-dialog"');
+    expect(html).toContain('id="open-settings"');
     expect(html).toContain('id="save-settings"');
     expect(html).toContain("saveSettings");
     expect(html).toContain("savedGenerationOptions");
@@ -84,7 +88,8 @@ describe("workbenchHtml", () => {
   it("keeps UI markup, styles, and browser script in focused modules", () => {
     expect(workbenchTemplate("styles", "script")).toContain("<style>styles</style>");
     expect(workbenchStyles()).toContain(".search-console");
-    expect(workbenchStyles()).toContain(".workbench-settings");
+    expect(workbenchStyles()).toContain(".settings-launcher");
+    expect(workbenchStyles()).toContain(".settings-dialog");
     expect(workbenchClientScript("{}")).toContain("applyLocale");
     expect(workbenchStyles()).toContain("--bg:");
     expect(workbenchClientScript("{}", "\"name: test\\n\"", "\".github/workflows/test.yml\"")).toContain("renderDeployCommands");
@@ -94,7 +99,8 @@ describe("workbenchHtml", () => {
     expect(workbenchClientScript("{}")).toContain("prefers-color-scheme");
     expect(workbenchClientScript("{}")).toContain("resetToHome");
     expect(workbenchClientScript("{}")).toContain("back-home-button");
-    expect(workbenchClientScript("{}")).toContain("deploy-dialog");
+    expect(workbenchClientScript("{}")).toContain("settings-dialog");
+    expect(workbenchClientScript("{}")).toContain("openSettingsDialog");
     expect(workbenchHtml()).toContain('id="back-home-button"');
     expect(workbenchStyles()).toContain(".tabs-bar");
     expect(workbenchStyles()).toContain(".deploy-dialog");

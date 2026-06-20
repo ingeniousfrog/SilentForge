@@ -1,77 +1,183 @@
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
-import { z } from "zod";
-import type { PresentationGenerationOptions, PresentationPlan, SiteModel } from "../types.js";
+import { runCodexExecForPlan } from "../codex/exec.js";
+import { checkCodexLoginStatus, isCodexAvailable, resolveCodexPath } from "../codex/detect.js";
+import { extractJsonFromText } from "../codex/parse.js";
+import type { AiPlanningConfig, PresentationGenerationOptions, PresentationPlan, SiteModel } from "../types.js";
+import { resolveAiPlanningConfig } from "./aiConfig.js";
+import {
+  buildOpenAiDeveloperMessage,
+  buildOpenAiUserMessage,
+  buildPresentationPrompt
+} from "./prompt.js";
 import { buildPresentationPlan, validatePresentationPlan } from "./plan.js";
+import { planSchema } from "./schema.js";
 
-const sourceRefSchema = z.enum([
-  "repository",
-  "repository.description",
-  "repository.homepage",
-  "repository.language",
-  "repository.license",
-  "repository.stars",
-  "repository.topics",
-  "readme.features",
-  "readme.installation",
-  "readme.links",
-  "readme.sections",
-  "readme.summary",
-  "readme.usage",
-  "releases",
-  "screenshots",
-  "knowledgeBase.configFiles",
-  "knowledgeBase.directorySummaries",
-  "knowledgeBase.entryFiles",
-  "knowledgeBase.fileTypeDistribution",
-  "knowledgeBase.mermaid",
-  "knowledgeBase.moduleMap",
-  "knowledgeBase.techStack"
-]);
-
-const planSchema = z.object({
-  mode: z.enum(["visual-showcase", "developer-deck", "architecture-map", "compact-story"]),
-  theme: z.enum(["signal-dark", "editorial-light", "blueprint"]),
-  chapters: z
-    .array(
-      z.object({
-        id: z.string().regex(/^[a-z0-9-]+$/),
-        kind: z.enum([
-          "hero",
-          "features",
-          "visuals",
-          "usage",
-          "readme-insights",
-          "technology",
-          "architecture",
-          "resources"
-        ]),
-        title: z.string().min(1).max(80),
-        summary: z.string().max(240).optional(),
-        sourceRefs: z.array(sourceRefSchema),
-        verticalDetails: z.array(z.enum(["install", "usage", "architecture", "releases", "readme"]))
-      })
-    )
-    .min(1)
-    .max(8),
-  detailPages: z.array(
-    z.object({
-      id: z.enum(["install", "usage", "architecture", "releases", "readme"]),
-      route: z.string(),
-      title: z.string().min(1).max(80),
-      sourceRefs: z.array(sourceRefSchema)
-    })
-  )
-});
-
-export type AiPlanner = (model: SiteModel, fallback: PresentationPlan) => Promise<PresentationPlan>;
+export type AiPlanner = (
+  model: SiteModel,
+  fallback: PresentationPlan,
+  aiConfig?: AiPlanningConfig
+) => Promise<PresentationPlan>;
 
 export type PresentationPlanningOptions = {
   readonly useAi?: boolean;
+  readonly aiConfig?: AiPlanningConfig;
   readonly aiPlanner?: AiPlanner;
   readonly onFallback?: (message: string) => void;
   readonly generationOptions?: PresentationGenerationOptions;
 };
+
+function getOpenAiTimeoutMs(): number {
+  const raw = process.env.SILENTFORGE_AI_TIMEOUT_MS;
+  const parsed = raw ? Number.parseInt(raw, 10) : Number.NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 15_000;
+}
+
+function createOpenAiClient(apiKey: string, baseURL?: string): OpenAI {
+  return new OpenAI({
+    apiKey,
+    baseURL: baseURL || undefined,
+    timeout: getOpenAiTimeoutMs(),
+    maxRetries: 1
+  });
+}
+
+export async function requestCodexPlan(
+  model: SiteModel,
+  fallback: PresentationPlan,
+  aiConfig: AiPlanningConfig = {}
+): Promise<PresentationPlan> {
+  const resolved = resolveAiPlanningConfig(aiConfig);
+  const prompt = buildPresentationPrompt(model, fallback);
+  const parsed = await runCodexExecForPlan({ prompt, model: resolved.codexModel });
+  return { ...parsed, plannedBy: "codex", locale: fallback.locale };
+}
+
+async function requestOpenAiResponsesPlan(
+  model: SiteModel,
+  fallback: PresentationPlan,
+  client: OpenAI,
+  openaiModel: string
+): Promise<PresentationPlan> {
+  const response = await client.responses.parse({
+    model: openaiModel,
+    store: false,
+    input: [
+      {
+        role: "developer",
+        content: buildOpenAiDeveloperMessage()
+      },
+      {
+        role: "user",
+        content: buildOpenAiUserMessage(model, fallback)
+      }
+    ],
+    text: {
+      format: zodTextFormat(planSchema, "presentation_plan")
+    }
+  });
+
+  if (!response.output_parsed) throw new Error("OpenAI returned no presentation plan.");
+  return { ...response.output_parsed, plannedBy: "openai", locale: fallback.locale };
+}
+
+async function requestOpenAiChatPlan(
+  model: SiteModel,
+  fallback: PresentationPlan,
+  client: OpenAI,
+  openaiModel: string
+): Promise<PresentationPlan> {
+  const response = await client.chat.completions.create({
+    model: openaiModel,
+    messages: [
+      { role: "system", content: buildOpenAiDeveloperMessage() },
+      { role: "user", content: buildOpenAiUserMessage(model, fallback) }
+    ]
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content?.trim()) throw new Error("OpenAI returned no presentation plan.");
+  const parsed = extractJsonFromText(content);
+  return { ...parsed, plannedBy: "openai", locale: fallback.locale };
+}
+
+export async function requestOpenAiPlan(
+  model: SiteModel,
+  fallback: PresentationPlan,
+  aiConfig: AiPlanningConfig = {}
+): Promise<PresentationPlan> {
+  const resolved = resolveAiPlanningConfig(aiConfig);
+  if (!resolved.openaiApiKey) {
+    throw new Error("OpenAI API key is not configured; using deterministic structure.");
+  }
+
+  const client = createOpenAiClient(resolved.openaiApiKey, resolved.openaiBaseUrl);
+  if (resolved.openaiBaseUrl) {
+    return requestOpenAiChatPlan(model, fallback, client, resolved.openaiModel);
+  }
+  return requestOpenAiResponsesPlan(model, fallback, client, resolved.openaiModel);
+}
+
+export async function requestAiPlan(
+  model: SiteModel,
+  fallback: PresentationPlan,
+  aiConfig: AiPlanningConfig = {}
+): Promise<PresentationPlan> {
+  const resolved = resolveAiPlanningConfig(aiConfig);
+  const errors: string[] = [];
+
+  if (await isCodexAvailable()) {
+    try {
+      return await requestCodexPlan(model, fallback, aiConfig);
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : "Codex planning failed");
+    }
+  }
+
+  if (resolved.openaiApiKey) {
+    try {
+      return await requestOpenAiPlan(model, fallback, aiConfig);
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : "OpenAI planning failed");
+    }
+  } else if (!errors.length) {
+    throw new Error("No AI backend is available; log in with `codex login` or provide an OpenAI API key.");
+  }
+
+  throw new Error(errors.join(" | "));
+}
+
+export type AiBackendStatus = {
+  readonly codex: {
+    readonly found: boolean;
+    readonly loggedIn: boolean;
+    readonly path: string;
+    readonly detail: string;
+  };
+  readonly server: {
+    readonly hasOpenAiKey: boolean;
+    readonly hasOpenAiBaseUrl: boolean;
+    readonly hasOpenAiModel: boolean;
+  };
+};
+
+export function getAiBackendStatus(): AiBackendStatus {
+  const codexPath = resolveCodexPath();
+  const loginStatus = checkCodexLoginStatus(codexPath);
+  return {
+    codex: {
+      found: Boolean(codexPath),
+      loggedIn: loginStatus.loggedIn,
+      path: loginStatus.path,
+      detail: loginStatus.detail
+    },
+    server: {
+      hasOpenAiKey: Boolean(process.env.OPENAI_API_KEY?.trim()),
+      hasOpenAiBaseUrl: Boolean(process.env.OPENAI_BASE_URL?.trim()),
+      hasOpenAiModel: Boolean(process.env.OPENAI_MODEL?.trim())
+    }
+  };
+}
 
 export async function createPresentationPlan(
   model: SiteModel,
@@ -81,53 +187,11 @@ export async function createPresentationPlan(
   if (!options.useAi) return fallback;
 
   try {
-    const planner = options.aiPlanner ?? requestOpenAiPlan;
-    const plan = await planner(model, fallback);
-    return validatePresentationPlan({ ...plan, plannedBy: "openai" }, model, options.generationOptions);
+    const planner = options.aiPlanner ?? requestAiPlan;
+    const plan = await planner(model, fallback, options.aiConfig);
+    return validatePresentationPlan(plan, model, options.generationOptions);
   } catch (error) {
-    options.onFallback?.(error instanceof Error ? error.message : "OpenAI planning failed");
+    options.onFallback?.(error instanceof Error ? error.message : "AI planning failed");
     return fallback;
   }
-}
-
-export async function requestOpenAiPlan(model: SiteModel, fallback: PresentationPlan): Promise<PresentationPlan> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error("OPENAI_API_KEY is not configured; using deterministic structure.");
-
-  const client = new OpenAI({ apiKey, timeout: 15_000, maxRetries: 1 });
-  const response = await client.responses.parse({
-    model: process.env.OPENAI_MODEL ?? "gpt-5.5",
-    store: false,
-    input: [
-      {
-        role: "developer",
-        content:
-          "Arrange the supplied repository facts into a concise project presentation. Use only supplied facts and source references. Do not invent claims, URLs, commands, metrics, HTML, or CSS. Preserve only detail pages present in the fallback plan."
-      },
-      {
-        role: "user",
-        content: JSON.stringify({
-          repository: model.repository,
-          readme: {
-            title: model.readme.title,
-            summary: model.readme.summary,
-            features: model.readme.features,
-            hasInstallation: Boolean(model.readme.installation),
-            hasUsage: Boolean(model.readme.usage),
-            sectionHeadings: model.readme.sections.map((section) => section.heading)
-          },
-          screenshotCount: model.screenshots.length,
-          releaseCount: model.releases.length,
-          knowledgeBase: model.knowledgeBase,
-          profile: model.profile,
-          fallback
-        })
-      }
-    ],
-    text: {
-      format: zodTextFormat(planSchema, "presentation_plan")
-    }
-  });
-  if (!response.output_parsed) throw new Error("OpenAI returned no presentation plan.");
-  return { ...response.output_parsed, plannedBy: "openai", locale: fallback.locale };
 }

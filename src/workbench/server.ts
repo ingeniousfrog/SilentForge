@@ -7,6 +7,7 @@ import { z } from "zod";
 import { parseGitHubRepoUrl } from "../github/url.js";
 import { minGithubTokenLength, normalizeGithubToken } from "../github/token.js";
 import { resolveLocale, t } from "../i18n/index.js";
+import { getAiBackendStatus } from "../presentation/ai.js";
 import { createZipFromDirectory } from "./archive.js";
 import { runGenerationJob } from "./generator.js";
 import { JobStore, toPublicJob } from "./jobStore.js";
@@ -28,10 +29,38 @@ const optionalGithubTokenSchema = z.preprocess(
   z.string().min(minGithubTokenLength).max(200).optional()
 );
 
+const optionalUrlSchema = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") return undefined;
+    const trimmed = value.trim();
+    return trimmed || undefined;
+  },
+  z.string().url().max(500).optional()
+);
+
+const optionalOpenAiKeySchema = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") return undefined;
+    const trimmed = value.trim();
+    return trimmed.length >= 8 ? trimmed : undefined;
+  },
+  z.string().min(8).max(500).optional()
+);
+
+const aiConfigSchema = z
+  .object({
+    openaiApiKey: optionalOpenAiKeySchema,
+    openaiBaseUrl: optionalUrlSchema,
+    openaiModel: z.string().trim().min(1).max(120).optional(),
+    codexModel: z.string().trim().min(1).max(120).optional()
+  })
+  .optional();
+
 const createJobSchema = z.object({
   repoUrl: z.string().trim().min(1).max(500),
   useAi: z.boolean().optional().default(false),
   githubToken: optionalGithubTokenSchema,
+  aiConfig: aiConfigSchema,
   generationOptions: z
     .object({
       mode: z.enum(["auto", "visual-showcase", "developer-deck", "architecture-map", "compact-story"]).optional(),
@@ -85,6 +114,11 @@ async function handleRequest(store: JobStore, request: IncomingMessage, response
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/api/ai/status") {
+    writeJson(response, 200, getAiBackendStatus());
+    return;
+  }
+
   if (request.method === "POST" && url.pathname === "/api/jobs") {
     const parsedPayload = createJobSchema.safeParse(await readJsonBody(request));
     if (!parsedPayload.success) {
@@ -102,7 +136,8 @@ async function handleRequest(store: JobStore, request: IncomingMessage, response
       parsedPayload.data.repoUrl,
       parsedPayload.data.useAi,
       parsedPayload.data.generationOptions,
-      parsedPayload.data.githubToken
+      parsedPayload.data.githubToken,
+      parsedPayload.data.aiConfig
     );
     queueMicrotask(() => {
       void runGenerationJob(store, job);

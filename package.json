@@ -45,6 +45,7 @@
   "dependencies": {
     "commander": "^14.0.0",
     "mermaid": "^11.15.0",
+    "node-pty": "^1.0.0",
     "openai": "^6.44.0",
     "zod": "^3.25.64"
   },
