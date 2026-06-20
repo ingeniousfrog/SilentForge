@@ -1,8 +1,13 @@
 export const pagesWorkflowPath = ".github/workflows/silentforge-pages.yml";
+export const silentForgeSourceRepo = "ingeniousfrog/SilentForge";
+export const silentForgeSourceRef = "main";
+export const silentForgeToolPath = ".silentforge-tool";
 
-export function buildPagesWorkflowYaml(fullName: string): string {
-  const repo = fullName.trim() || "owner/repo";
-  return `name: Deploy SilentForge presentation site
+export function buildPagesWorkflowYaml(_fullName: string): string {
+  return `# SilentForge is not on npm yet — this workflow builds it from GitHub source.
+# After npm publish, you can switch to: npx silentforge@latest init \${{ github.repository }} -o site --locale en
+
+name: Deploy SilentForge presentation site
 
 on:
   push:
@@ -22,15 +27,33 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - uses: actions/configure-pages@v5
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Checkout SilentForge
+        uses: actions/checkout@v4
+        with:
+          repository: ${silentForgeSourceRepo}
+          ref: ${silentForgeSourceRef}
+          path: ${silentForgeToolPath}
+
+      - name: Build SilentForge
+        working-directory: ${silentForgeToolPath}
+        run: npm ci && npm run build
+
       - name: Generate presentation site
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
-        run: npx silentforge@latest init ${repo} -o site --locale en
+        run: node ${silentForgeToolPath}/dist/cli.js init \${{ github.repository }} -o site --locale en
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

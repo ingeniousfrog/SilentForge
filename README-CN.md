@@ -292,7 +292,7 @@ GitHub 要求**先手动启用 Pages**，Actions 的首次部署才能成功：
 2. 将 [`.github/workflows/silentforge-pages.yml`](./.github/workflows/silentforge-pages.yml) 复制到你的仓库——或在本地 Workbench 生成后，打开 **Deploy** 复制 workflow YAML。
 3. push 到 `main`，或在 **Actions** 中手动运行。
 
-其他仓库通常在 workflow 中使用 `npx silentforge@latest init ${{ github.repository }} -o site`。本仓库从源码 `npm ci && npm run build`，确保 CI 与最新提交一致。
+其他仓库请使用 Workbench **Deploy** 提供的 workflow 模板：检出 [SilentForge](https://github.com/ingeniousfrog/SilentForge) 源码、构建后执行 `node .silentforge-tool/dist/cli.js init ${{ github.repository }} -o site`（npm 发布规划中；在发布前请勿在 CI 中使用 `npx silentforge@latest`）。本仓库从源码 `npm ci && npm run build`，确保 CI 与最新提交一致。
 
 线上地址格式：`https://<user>.github.io/<repo>/`（组织仓库路径相同）。
 
