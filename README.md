@@ -1,12 +1,13 @@
 # SilentForge
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+[![npm version](https://img.shields.io/npm/v/silentforge.svg)](https://www.npmjs.com/package/silentforge)
 [![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Live demo](https://img.shields.io/badge/demo-GitHub%20Pages-6366f1?style=for-the-badge)](https://ingeniousfrog.github.io/SilentForge/)
 
 **Transform public GitHub repositories into portable, evidence-backed static presentation sites.**
 
-SilentForge reads README content, metadata, file trees, releases, and lightweight code signals, then emits self-contained HTML you can preview, zip, and deploy anywhere. Use the **`reposite` / `silentforge` CLI** for one-shot generation, or the local **Workbench** for interactive preview and GitHub Pages deployment.
+SilentForge reads README content, metadata, file trees, releases, and lightweight code signals, then emits self-contained HTML you can preview, zip, and deploy anywhere. Install from **[npm](https://www.npmjs.com/package/silentforge)** (`npm install -g silentforge`) or run instantly with **`npx silentforge`**. Use the **`reposite` / `silentforge` CLI** for one-shot generation, or the local **Workbench** for interactive preview and GitHub Pages deployment.
 
 The pipeline is **deterministic and source-bound**—no fabricated sections. Optional **Codex** (preferred) or **OpenAI** planning can reorder chapters, but every claim traces back to extracted repository data.
 
@@ -66,10 +67,16 @@ A typical generated site includes a **hero**, **features**, **visuals**, **usage
 
 ## Quick start
 
-Requires **Node.js 20+**. No install step:
+Requires **Node.js 20+**. Pick one install path:
+
+| Path | When to use |
+|------|-------------|
+| **`npx silentforge`** | Try once—no install |
+| **`npm install -g silentforge`** | Use `reposite` / `silentforge` daily |
+| **[Build from source](#build-from-source)** | Contribute or run unreleased commits |
 
 ```sh
-# Generate a static presentation site
+# Generate a static presentation site (npx — no install)
 npx silentforge init vercel/next.js
 
 # Open the generated index.html (macOS example)
@@ -182,17 +189,23 @@ flowchart LR
 
 ### npm (recommended)
 
+Published on npm as [`silentforge`](https://www.npmjs.com/package/silentforge). Requires **Node.js 20+**.
+
 ```sh
-# One-shot generation (no global install)
+# One-shot generation (no install)
 npx silentforge init owner/repo
 
 # Workbench UI
 npx silentforge web
 
-# Global install
+# Global install — adds reposite + silentforge to your PATH
 npm install -g silentforge
 reposite init owner/repo
 reposite web
+
+# Project-local install (optional)
+npm install silentforge
+npx silentforge init owner/repo
 ```
 
 The **`reposite`** and **`silentforge`** commands both point to the same CLI entrypoint declared in `package.json`:
