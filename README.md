@@ -8,9 +8,9 @@
 
 SilentForge reads README content, metadata, file trees, releases, and lightweight code signals, then emits self-contained HTML you can preview, zip, and deploy anywhere. Use the **`reposite` / `silentforge` CLI** for one-shot generation, or the local **Workbench** for interactive preview and GitHub Pages deployment.
 
-The pipeline is **deterministic and source-bound**—no fabricated sections. Optional OpenAI planning reorders the narrative but every claim traces back to extracted repository data.
+The pipeline is **deterministic and source-bound**—no fabricated sections. Optional **Codex** (preferred) or **OpenAI** planning can reorder chapters, but every claim traces back to extracted repository data.
 
-[中文文档](./README-CN.md) · **[Live demo](https://ingeniousfrog.github.io/SilentForge/)** — presentation site generated from this repository
+[中文文档](./README-CN.md) · **[Live demo](https://ingeniousfrog.github.io/SilentForge/)** — scroll-story site auto-built from this README on every push to `main`
 
 ---
 
@@ -25,10 +25,10 @@ The pipeline is **deterministic and source-bound**—no fabricated sections. Opt
 
 ## Table of contents
 
+- [Overview](#overview)
 - [Quick start](#quick-start)
 - [Usage](#usage)
 - [Examples](#examples)
-- [Overview](#overview)
 - [How it works](#how-it-works)
 - [Features](#features)
 - [Requirements](#requirements)
@@ -59,6 +59,8 @@ SilentForge targets teams and maintainers who need a **credible, offline-capable
 | **Generated site** | Plain HTML / CSS / JS / JSON—editable and hostable anywhere |
 
 Both entry points share the same generation engine, so Preview, ZIP download, and CLI output are structurally identical.
+
+A typical generated site includes a **hero**, **features**, **visuals**, **usage commands**, README deep-dives, **tech stack**, **architecture diagram**, and **resource links**. Browse the [live demo](https://ingeniousfrog.github.io/SilentForge/) to see this repository rendered end-to-end.
 
 ---
 
@@ -125,7 +127,7 @@ Try SilentForge on well-documented public repositories:
 
 See [examples/README.md](./examples/README.md) for more detail.
 
-**Live demo:** [SilentForge on GitHub Pages](https://ingeniousfrog.github.io/SilentForge/) — auto-generated from **this repository** on every push to `main` ([workflow](./.github/workflows/silentforge-pages.yml)). Use it as a reference for what your own repo can look like after deployment.
+**Live demo:** [SilentForge on GitHub Pages](https://ingeniousfrog.github.io/SilentForge/) — **live and auto-updated** from this repository on every push to `main` ([workflow](./.github/workflows/silentforge-pages.yml)). Open it to preview scroll-story chapters, extracted commands, and architecture signals before deploying your own repo.
 
 ---
 
@@ -157,7 +159,7 @@ flowchart LR
 - **Scroll-story presentation sites** — sticky chapter navigation, detail routes, three themes (Dark Signal, Editorial Light, Blueprint), five narrative modes or auto-selection from repository signals
 - **Code wiki** — detected stack, entry files, config signals, directory summaries, module map, and offline Mermaid architecture diagram
 - **Repository diagnostics** — readiness score with strengths, gaps, and recommendations in Workbench **Overview**
-- **Local Workbench** — paste a URL, stream generation over SSE, inspect **Overview / Resources / Code Wiki / Preview**, download ZIP, copy GitHub Pages workflow from **Deploy**
+- **Local Workbench** — paste a URL, stream generation over SSE, inspect **Overview / Resources / Code Wiki / Preview**, download ZIP, copy GitHub Pages workflow from **Deploy**; **Settings** dialog for mode, theme, chapters, and Codex-first AI
 - **Source-bound output** — plain HTML, CSS, JS, and JSON; no consumer build step; Preview and ZIP share identical files
 - **Internationalization** — Workbench and generated site chrome in EN / 中文; repository facts stay as extracted from the source repo
 
@@ -269,19 +271,20 @@ Skipping step 2 causes the workflow to fail at `configure-pages` with `Get Pages
 
 ### SilentForge demo site (this repo)
 
-[`.github/workflows/silentforge-pages.yml`](./.github/workflows/silentforge-pages.yml) is already in this repository. On every push to `main` it:
+**Live now:** [https://ingeniousfrog.github.io/SilentForge/](https://ingeniousfrog.github.io/SilentForge/)
+
+[`.github/workflows/silentforge-pages.yml`](./.github/workflows/silentforge-pages.yml) is already committed. On every push to `main` it:
 
 1. Checks out the repo and runs `npm ci && npm run build`.
 2. Generates a presentation site for `${{ github.repository }}` into `site/`.
 3. Publishes `site/` to GitHub Pages.
 
-**To turn on the demo:**
+**First-time setup** (only if you fork or clone into a fresh repo without Pages enabled):
 
-1. Enable Pages for this repo: [Settings → Pages](https://github.com/ingeniousfrog/SilentForge/settings/pages) → **Source: GitHub Actions**.
-2. In **Actions**, run **Deploy SilentForge presentation site** (or re-run the latest failed workflow).
-3. When **build** and **deploy** both succeed, open **https://ingeniousfrog.github.io/SilentForge/**.
+1. Enable Pages: [Settings → Pages](https://github.com/ingeniousfrog/SilentForge/settings/pages) → **Source: GitHub Actions**.
+2. Run **Deploy SilentForge presentation site** from [Actions](https://github.com/ingeniousfrog/SilentForge/actions/workflows/silentforge-pages.yml).
 
-Future pushes to `main` regenerate and redeploy automatically. Add the Live demo badge at the top of your README once the URL responds.
+After the first successful deploy, future pushes to `main` regenerate and republish automatically.
 
 ### Any other repository
 
@@ -528,7 +531,7 @@ No for occasional public repos. A [personal access token](https://github.com/set
 
 ### Is the Live demo the official SilentForge website?
 
-It is a **generated presentation site** built from this repository by SilentForge itself—useful as a sample of output, not a separate marketing site. If the URL returns 404, enable **Settings → Pages → GitHub Actions** once and re-run [Deploy SilentForge presentation site](https://github.com/ingeniousfrog/SilentForge/actions/workflows/silentforge-pages.yml) (see [SilentForge demo site](#silentforge-demo-site-this-repo)).
+No—it is a **generated presentation site** built from this repository by SilentForge itself. Use it to preview output quality and chapter layout, not as a separate marketing site. Forks or fresh clones still need the [one-time Pages setup](#one-time-prerequisite-every-repository).
 
 ### Can I deploy to hosts other than GitHub Pages?
 
