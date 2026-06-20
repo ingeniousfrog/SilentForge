@@ -43,9 +43,25 @@ function extractTitle(lines: readonly string[]): string | undefined {
 }
 
 function splitSections(lines: readonly string[]): readonly ReadmeSection[] {
-  const indexedHeadings = lines
-    .map((line, index) => ({ index, match: line.match(headingPattern) }))
-    .filter((item): item is { readonly index: number; readonly match: RegExpMatchArray } => Boolean(item.match));
+  const indexedHeadings: { readonly index: number; readonly match: RegExpMatchArray }[] = [];
+  let inFence = false;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const trimmed = line.trim();
+    if (trimmed.startsWith("```")) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) {
+      continue;
+    }
+
+    const match = line.match(headingPattern);
+    if (match) {
+      indexedHeadings.push({ index, match });
+    }
+  }
 
   return indexedHeadings.map((item, position) => {
     const level = item.match[1].length;

@@ -88,4 +88,23 @@ No.
     ]);
     expect(parsed.links).toEqual([]);
   });
+
+  it("does not split sections on hash comments inside fenced code blocks", () => {
+    const parsed = parseReadme(`# WidgetKit
+
+## Quick start
+
+\`\`\`sh
+# Generate a static presentation site
+npm install widgetkit
+\`\`\`
+
+## Usage
+
+Run the CLI.
+`);
+
+    expect(parsed.sections.map((section) => section.heading)).not.toContain("Launch the local Workbench UI");
+    expect(parsed.sections.map((section) => section.heading)).toEqual(["WidgetKit", "Quick start", "Usage"]);
+  });
 });

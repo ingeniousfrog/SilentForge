@@ -1,5 +1,6 @@
 import type { PresentationDetailPage, PresentationPlan, SiteModel } from "../types.js";
 import {
+  extractMarkdownCommands,
   firstMarkdownCodeBlock,
   isMermaidCodeBlock,
   summarizeMarkdown
@@ -21,8 +22,8 @@ export function renderDetailPage(model: SiteModel, plan: PresentationPlan, page:
 }
 
 function detailContent(model: SiteModel, id: PresentationDetailPage["id"], locale: PresentationPlan["locale"]): string {
-  if (id === "install") return codeBlock(model.readme.installation);
-  if (id === "usage") return codeBlock(model.readme.usage);
+  if (id === "install") return codeBlock(extractMarkdownCommands(model.readme.installation));
+  if (id === "usage") return codeBlock(extractMarkdownCommands(model.readme.usage));
   if (id === "releases") {
     return model.releases
       .map((release) => {

@@ -1,5 +1,8 @@
 import type { PresentationChapter, PresentationPlan, SiteModel } from "../types.js";
 import {
+  countCommandLines,
+  extractCommandPreview,
+  extractMarkdownCommands,
   firstMarkdownCodeBlock,
   isMermaidCodeBlock,
   selectReadmeInsights,
@@ -231,10 +234,11 @@ function chapterFooter(plan: PresentationPlan, index: number, locale: Locale): s
 }
 
 function commandPreview(locale: Locale, labelKey: string, content?: string): string {
-  if (!content) return "";
-  const lines = content.split("\n").filter((line) => line.trim().length > 0);
-  const preview = lines.slice(0, 5).join("\n");
-  const hiddenCount = Math.max(lines.length - 5, 0);
+  const preview = extractCommandPreview(content, 5);
+  if (!preview) return "";
+  const totalLines = countCommandLines(content);
+  const previewLines = preview.split("\n").filter((line) => line.trim().length > 0).length;
+  const hiddenCount = Math.max(totalLines - previewLines, 0);
   return `<article><span class="section-index">${escapeHtml(t(locale, `site.${labelKey}`))}</span><pre><code>${escapeHtml(
     preview
   )}</code></pre>${
@@ -266,8 +270,8 @@ function summaryParagraph(summary: string): string {
 }
 
 function commandOverflow(model: SiteModel, locale: Locale): string {
-  const installOverflow = Math.max((model.readme.installation?.split("\n").length ?? 0) - 5, 0);
-  const usageOverflow = Math.max((model.readme.usage?.split("\n").length ?? 0) - 5, 0);
+  const installOverflow = Math.max(countCommandLines(model.readme.installation) - 5, 0);
+  const usageOverflow = Math.max(countCommandLines(model.readme.usage) - 5, 0);
   const totalOverflow = installOverflow + usageOverflow;
   if (totalOverflow <= 0) return "";
   return `<details class="show-more"><summary>${escapeHtml(
