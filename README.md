@@ -208,6 +208,8 @@ npm install silentforge
 npx silentforge init owner/repo
 ```
 
+**`npm install -g` fails with `EACCES`?** On macOS/Linux, npm may lack permission to write symlinks under `/usr/local/bin`. Use [`npx silentforge`](#quick-start) instead, or see [Global install permission errors](#global-install-permission-errors-eacces) below.
+
 The **`reposite`** and **`silentforge`** commands both point to the same CLI entrypoint declared in `package.json`:
 
 ```json
@@ -541,6 +543,25 @@ Workbench-local preferences (browser `localStorage`, not environment variables):
 ### Do I need a GitHub token?
 
 No for occasional public repos. A [personal access token](https://github.com/settings/tokens) helps when you hit API rate limits (~60 requests/hour unauthenticated vs ~5,000/hour authenticated).
+
+### Global install permission errors (`EACCES`)
+
+If `npm install -g silentforge` fails with `EACCES: permission denied, symlink ... -> /usr/local/bin/reposite`, npm cannot write global bin links to a system directory. This is common on macOS—not a SilentForge bug.
+
+**Easiest:** skip global install and use `npx silentforge init …` or `npx silentforge web` ([Quick start](#quick-start)).
+
+**Recommended for daily use:** point npm’s global prefix to a directory you own:
+
+```sh
+mkdir -p ~/.npm-global
+npm config set prefix ~/.npm-global
+# add to ~/.zshrc or ~/.bashrc:
+export PATH="$HOME/.npm-global/bin:$PATH"
+```
+
+Then run `npm install -g silentforge` again. Using **nvm**, **fnm**, or **volta** also avoids `/usr/local` permission issues.
+
+Avoid `sudo npm install -g` unless you understand the ownership trade-offs.
 
 ### Is the Live demo the official SilentForge website?
 

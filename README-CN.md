@@ -208,6 +208,8 @@ npm install silentforge
 npx silentforge init owner/repo
 ```
 
+**`npm install -g` 报 `EACCES`？** 在 macOS/Linux 上，npm 可能无权在 `/usr/local/bin` 创建符号链接。可改用 [`npx silentforge`](#快速开始)，或见下方 [全局安装权限错误](#全局安装权限错误-eacces)。
+
 **`reposite`** 与 **`silentforge`** 命令均指向 `package.json` 中的同一 CLI 入口：
 
 ```json
@@ -541,6 +543,25 @@ Workbench 本地偏好（浏览器 `localStorage`，非环境变量）：`silent
 ### 必须填 GitHub Token 吗？
 
 公开仓库偶尔试用不必填。[Personal Access Token](https://github.com/settings/tokens) 可在触发 API 限流时使用（未认证约 60 次/小时/IP，认证后约 5000 次/小时）。
+
+### 全局安装权限错误（`EACCES`）
+
+若 `npm install -g silentforge` 报错 `EACCES: permission denied, symlink ... -> /usr/local/bin/reposite`，说明 npm 无法在系统目录写入全局命令链接。这在 macOS 上很常见——不是 SilentForge 包的问题。
+
+**最省事：** 不做全局安装，直接用 `npx silentforge init …` 或 `npx silentforge web`（见[快速开始](#快速开始)）。
+
+**日常推荐：** 将 npm 全局目录设为用户目录：
+
+```sh
+mkdir -p ~/.npm-global
+npm config set prefix ~/.npm-global
+# 写入 ~/.zshrc 或 ~/.bashrc：
+export PATH="$HOME/.npm-global/bin:$PATH"
+```
+
+然后重新执行 `npm install -g silentforge`。使用 **nvm**、**fnm** 或 **volta** 管理 Node 时，通常也不会遇到 `/usr/local` 权限问题。
+
+除非清楚权限后果，否则不建议 `sudo npm install -g`。
 
 ### 在线演示是 SilentForge 官网吗？
 
