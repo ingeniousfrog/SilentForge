@@ -33,6 +33,7 @@ The pipeline is **deterministic and source-bound**—no fabricated sections. Opt
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation and distribution](#installation-and-distribution)
+- [Deploy to GitHub Pages](#deploy-to-github-pages)
 - [GitHub authentication](#github-authentication-optional)
 - [Workbench](#workbench)
 - [CLI reference](#cli-reference)
@@ -146,7 +147,7 @@ flowchart LR
 1. **Ingest** — Resolve `owner/repo`, fetch repository metadata, README, releases, and file tree via the GitHub API.
 2. **Extract** — Parse README structure (features, install, usage, FAQ, screenshots, sections) and derive a lightweight code wiki (stack, entry files, configs, module map, Mermaid diagram).
 3. **Diagnose** — Score repository readiness and surface gaps before publication.
-4. **Plan** — Select presentation mode, theme, and chapters (rule-based by default; optional OpenAI with schema validation).
+4. **Plan** — Select presentation mode, theme, and chapters (rule-based by default; optional Codex or OpenAI with schema validation).
 5. **Emit** — Write a self-contained static site with scroll-story navigation, detail pages, and bundled Mermaid runtime (no CDN dependency).
 
 ---
@@ -254,15 +255,43 @@ Open `<output-dir>/index.html` after `reposite init`, or serve the folder with a
 
 ## Deploy to GitHub Pages
 
-SilentForge ships a GitHub Actions workflow that regenerates and publishes a presentation site on every push to `main`.
+SilentForge publishes a **static presentation site generated from the target repository itself**—README, metadata, file tree, and code signals—not a hand-written marketing page. The [Live demo](https://ingeniousfrog.github.io/SilentForge/) is this product applied to **this repository**.
 
-1. In your repository, go to **Settings → Pages → Build and deployment** and set the source to **GitHub Actions**.
-2. Copy [`.github/workflows/silentforge-pages.yml`](./.github/workflows/silentforge-pages.yml) into your repository (or use **Copy GitHub Pages workflow** in Workbench Overview after generating locally).
-3. Push to `main` or run the workflow manually from the **Actions** tab.
+### One-time prerequisite (every repository)
 
-For this repository, the published site lives at **https://ingeniousfrog.github.io/SilentForge/**.
+GitHub requires a manual Pages enablement **before** the first Actions deploy can succeed:
 
-Other repos can use `npx silentforge@latest init ${{ github.repository }} -o site` inside the workflow (see the template). The SilentForge repository itself builds from source with `npm ci && npm run build` so CI always matches the latest commit.
+1. Open your repository **Settings → Pages → Build and deployment**.
+2. Set **Source** to **GitHub Actions** (not "Deploy from a branch").
+3. Save.
+
+Skipping step 2 causes the workflow to fail at `configure-pages` with `Get Pages site failed`, or the deploy job to return status **404**. After enabling Pages, open **Actions**, select **Deploy SilentForge presentation site**, and **Re-run failed jobs** (or **Run workflow**).
+
+### SilentForge demo site (this repo)
+
+[`.github/workflows/silentforge-pages.yml`](./.github/workflows/silentforge-pages.yml) is already in this repository. On every push to `main` it:
+
+1. Checks out the repo and runs `npm ci && npm run build`.
+2. Generates a presentation site for `${{ github.repository }}` into `site/`.
+3. Publishes `site/` to GitHub Pages.
+
+**To turn on the demo:**
+
+1. Enable Pages for this repo: [Settings → Pages](https://github.com/ingeniousfrog/SilentForge/settings/pages) → **Source: GitHub Actions**.
+2. In **Actions**, run **Deploy SilentForge presentation site** (or re-run the latest failed workflow).
+3. When **build** and **deploy** both succeed, open **https://ingeniousfrog.github.io/SilentForge/**.
+
+Future pushes to `main` regenerate and redeploy automatically. Add the Live demo badge at the top of your README once the URL responds.
+
+### Any other repository
+
+1. Complete the [one-time prerequisite](#one-time-prerequisite-every-repository) above.
+2. Copy [`.github/workflows/silentforge-pages.yml`](./.github/workflows/silentforge-pages.yml) into your repo—or generate locally in Workbench, open **Deploy**, and copy the workflow YAML.
+3. Push to `main` or run the workflow manually from **Actions**.
+
+Other repos typically use `npx silentforge@latest init ${{ github.repository }} -o site` inside the workflow. This repository builds from source with `npm ci && npm run build` so CI always matches the latest commit.
+
+Expected URL pattern: `https://<user>.github.io/<repo>/` (organization repos use the same path shape).
 
 After Pages is live, add a README badge (also available from Workbench Overview):
 
@@ -322,13 +351,14 @@ npm run build && npm run web:dist
 1. **Appearance** — Toggle **Dark / Light** in the header (defaults to system preference; persisted as `silentforge.uiTheme` after manual selection).
 2. **Locale** — Switch **EN / 中文** (persisted as `silentforge.locale`; affects Workbench copy and the next generation job).
 3. **GitHub token (optional)** — Expand **GitHub access (optional)** if you hit rate limits or generate frequently. Token stays on your machine; see [GitHub authentication](#github-authentication-optional).
-4. **Target** — Paste a public GitHub URL or `owner/repo` shorthand and click **Generate**.
-5. **Inspect** — Follow the generation stream; review **Overview**, **Resources**, **Code Wiki**, and **Preview** (opens automatically on completion).
-6. **Export** — Download the ZIP or use **Back to home** to start a new target.
+4. **Settings** — Open the **Settings** dialog to configure output mode, theme, chapters, and optional **AI-assisted structure** (Codex status badge, OpenAI key/base URL for the server-side job). Settings are saved when you click **Generate**.
+5. **Target** — Paste a public GitHub URL or `owner/repo` shorthand and click **Generate**.
+6. **Inspect** — Follow the generation stream; review **Overview**, **Resources**, **Code Wiki**, and **Preview** (opens automatically on completion).
+7. **Export** — Download the ZIP from the tab bar, open **Deploy** for GitHub Pages steps, or use **Back to home** to start a new target.
 
 ### Output settings
 
-Workbench **Output settings** control the **generated site only**—not the Workbench shell:
+Workbench **Settings → Output settings** control the **generated site only**—not the Workbench shell:
 
 | Control | Effect |
 |---------|--------|
@@ -485,8 +515,8 @@ Workbench-local preferences (browser `localStorage`, not environment variables):
 | **No filler** | Empty sections are omitted, not padded with placeholders |
 | **Editable artifacts** | Plain HTML, CSS, JavaScript, and JSON—no proprietary runtime |
 | **Single artifact path** | Preview, ZIP, and CLI output share identical files |
-| **Local-first** | No hosted build pipeline; runs entirely on your machine |
-| **Graceful AI fallback** | Rule-based planning when OpenAI is unavailable or validation fails |
+| **Local-first** | CLI and Workbench run on your machine; GitHub Pages is an optional publish target |
+| **Graceful AI fallback** | Rule-based planning when Codex/OpenAI is unavailable or validation fails |
 
 ---
 
@@ -498,7 +528,7 @@ No for occasional public repos. A [personal access token](https://github.com/set
 
 ### Is the Live demo the official SilentForge website?
 
-It is a **generated presentation site** built from this repository by SilentForge itself—useful as a sample of output, not a separate marketing site.
+It is a **generated presentation site** built from this repository by SilentForge itself—useful as a sample of output, not a separate marketing site. If the URL returns 404, enable **Settings → Pages → GitHub Actions** once and re-run [Deploy SilentForge presentation site](https://github.com/ingeniousfrog/SilentForge/actions/workflows/silentforge-pages.yml) (see [SilentForge demo site](#silentforge-demo-site-this-repo)).
 
 ### Can I deploy to hosts other than GitHub Pages?
 
@@ -531,7 +561,7 @@ src/
   commands/       CLI init command
   github/         Repository snapshot fetching
   i18n/           EN / zh message catalogs
-  presentation/   Planning (rules + optional OpenAI)
+  presentation/   Planning (rules + optional Codex/OpenAI)
   readme/         README parsing
   site/           Static site generation
   workbench/      Local server, job store, UI
