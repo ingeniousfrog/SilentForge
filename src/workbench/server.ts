@@ -2,10 +2,10 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, relative, resolve, sep } from "node:path";
-import { pathToFileURL } from "node:url";
 import { parseGitHubRepoUrl } from "../github/url.js";
 import { resolveLocale, t } from "../i18n/index.js";
 import { getAiBackendStatus } from "../presentation/ai.js";
+import { isDirectModuleExecution } from "../shared/entry.js";
 import { createZipFromDirectory } from "./archive.js";
 import { runGenerationJob } from "./generator.js";
 import { JobStore, toPublicJob } from "./jobStore.js";
@@ -311,7 +311,7 @@ function safeFilename(value: string): string {
   return value.replace(/[^A-Za-z0-9_.-]/g, "-");
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isDirectModuleExecution(import.meta.url)) {
   const server = await startWorkbenchServer();
   process.stdout.write(`SilentForge workbench: ${server.url}\n`);
 }

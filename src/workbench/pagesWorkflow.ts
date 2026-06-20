@@ -4,8 +4,7 @@ export const silentForgeSourceRef = "main";
 export const silentForgeToolPath = ".silentforge-tool";
 
 export function buildPagesWorkflowYaml(_fullName: string): string {
-  return `# SilentForge is not on npm yet — this workflow builds it from GitHub source.
-# After npm publish, you can switch to: npx silentforge@latest init \${{ github.repository }} -o site --locale en
+  return `# Requires silentforge >= 0.1.1 on npm (0.1.0 bin entry was broken).
 
 name: Deploy SilentForge presentation site
 
@@ -38,21 +37,10 @@ jobs:
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Checkout SilentForge
-        uses: actions/checkout@v4
-        with:
-          repository: ${silentForgeSourceRepo}
-          ref: ${silentForgeSourceRef}
-          path: ${silentForgeToolPath}
-
-      - name: Build SilentForge
-        working-directory: ${silentForgeToolPath}
-        run: npm ci && npm run build
-
       - name: Generate presentation site
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
-        run: node ${silentForgeToolPath}/dist/cli.js init \${{ github.repository }} -o site --locale en
+        run: npx --yes silentforge@latest init \${{ github.repository }} -o site --locale en
 
       - uses: actions/upload-pages-artifact@v3
         with:

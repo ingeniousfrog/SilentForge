@@ -292,7 +292,7 @@ After the first successful deploy, future pushes to `main` regenerate and republ
 2. Copy [`.github/workflows/silentforge-pages.yml`](./.github/workflows/silentforge-pages.yml) into your repo—or generate locally in Workbench, open **Deploy**, and copy the workflow YAML.
 3. Push to `main` or run the workflow manually from **Actions**.
 
-Other repos use the Workbench **Deploy** workflow template: it checks out [SilentForge](https://github.com/ingeniousfrog/SilentForge), builds from source, then runs `node .silentforge-tool/dist/cli.js init ${{ github.repository }} -o site` (npm publish is planned; until then, do not use `npx silentforge@latest` in CI). This repository builds from its own source with `npm ci && npm run build` so CI always matches the latest commit.
+Other repos use the Workbench **Deploy** workflow template with `npx --yes silentforge@latest init ${{ github.repository }} -o site --locale en` (requires **silentforge >= 0.1.1** on npm). This repository builds from its own source with `npm ci && npm run build` so CI always matches the latest commit.
 
 Expected URL pattern: `https://<user>.github.io/<repo>/` (organization repos use the same path shape).
 

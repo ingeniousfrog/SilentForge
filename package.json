@@ -1,6 +1,6 @@
 {
   "name": "silentforge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Forge a GitHub repository into a portable adaptive HTML presentation and code knowledge base.",
   "type": "module",
   "repository": {
@@ -12,8 +12,8 @@
     "url": "https://github.com/ingeniousfrog/SilentForge/issues"
   },
   "bin": {
-    "reposite": "./dist/cli.js",
-    "silentforge": "./dist/cli.js"
+    "reposite": "dist/cli.js",
+    "silentforge": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -55,5 +55,12 @@
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "vitest": "^4.1.9"
-  }
+  },
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "tests"
+  },
+  "author": ""
 }

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 import { Command } from "commander";
 import { initRepoSite, describePlannedBy } from "./commands/init.js";
 import { resolveLocale, t } from "./i18n/index.js";
 import { logger } from "./logger.js";
+import { isDirectModuleExecution } from "./shared/entry.js";
 import { startWorkbenchServer } from "./workbench/server.js";
 import type { Locale, PresentationChapterKind, PresentationMode, PresentationTheme } from "./types.js";
 
@@ -41,7 +41,7 @@ export function createCli(): Command {
   program
     .name("reposite")
     .description("Generate a portable static presentation and lightweight code wiki from a GitHub repository.")
-    .version("0.1.0");
+    .version("0.1.1");
 
   program
     .command("init")
@@ -130,6 +130,6 @@ async function main(): Promise<void> {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isDirectModuleExecution(import.meta.url)) {
   await main();
 }
