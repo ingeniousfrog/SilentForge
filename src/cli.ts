@@ -2,7 +2,7 @@
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { Command } from "commander";
-import { initRepoSite } from "./commands/init.js";
+import { initRepoSite, describePlannedBy } from "./commands/init.js";
 import { resolveLocale, t } from "./i18n/index.js";
 import { logger } from "./logger.js";
 import { startWorkbenchServer } from "./workbench/server.js";
@@ -47,7 +47,7 @@ export function createCli(): Command {
     .command("init")
     .argument("<github-repo-url>", "GitHub repository URL or owner/repo shorthand")
     .option("-o, --output <dir>", "Output directory for the generated static presentation")
-    .option("--ai", "Use OpenAI to arrange evidence-backed presentation structure", false)
+    .option("--ai", "Enable AI-assisted structure (Codex first, OpenAI env fallback, then local rules)", false)
     .option("--mode <mode>", `Presentation mode (${presentationModes.join(", ")})`)
     .option("--theme <theme>", `Presentation theme (${presentationThemes.join(", ")})`)
     .option("--chapters <kinds>", `Comma-separated chapter kinds (${chapterKinds.join(", ")})`)
@@ -92,6 +92,9 @@ export function createCli(): Command {
         });
         const indexPath = join(result.outputDir, "index.html");
         logger.info(t(locale, "cli.generated", { fullName: result.fullName }));
+        if (options.ai) {
+          logger.info(describePlannedBy(locale, result.presentationPlan.plannedBy));
+        }
         logger.info(t(locale, "cli.output", { outputDir: result.outputDir }));
         logger.info(t(locale, "cli.indexPath", { indexPath }));
         logger.info(t(locale, "cli.nextStep"));

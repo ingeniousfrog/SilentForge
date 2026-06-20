@@ -50,7 +50,8 @@ describe("initRepoSite", () => {
     expect(createPresentationPlan).toHaveBeenCalledWith(
       expect.objectContaining({ repository: expect.any(Object) }),
       expect.objectContaining({
-        generationOptions: { locale: "zh", theme: "blueprint", enabledChapters: ["features", "usage"] }
+        generationOptions: { locale: "zh", theme: "blueprint", enabledChapters: ["features", "usage"] },
+        onFallback: expect.any(Function)
       })
     );
     expect(generateStaticSite).toHaveBeenCalledWith(
@@ -58,6 +59,48 @@ describe("initRepoSite", () => {
       "/tmp/work/site",
       expect.objectContaining({ presentationPlan: expect.any(Object) })
     );
-    expect(result).toEqual({ outputDir: "/tmp/work/site", fullName: "acme/widgetkit" });
+    expect(result).toEqual({
+      outputDir: "/tmp/work/site",
+      fullName: "acme/widgetkit",
+      presentationPlan: expect.objectContaining({ plannedBy: "rules" })
+    });
+  });
+
+  it("passes useAi and forwards onFallback when AI planning is enabled", async () => {
+    const { initRepoSite } = await import("../src/commands/init.js");
+    fetchRepositorySnapshot.mockResolvedValue({
+      metadata: {
+        owner: "acme",
+        name: "widgetkit",
+        fullName: "acme/widgetkit",
+        htmlUrl: "https://github.com/acme/widgetkit",
+        defaultBranch: "main",
+        stars: 1,
+        topics: []
+      },
+      readme: "# WidgetKit",
+      releases: [],
+      files: [{ path: "package.json", type: "blob" }],
+      configFiles: [{ path: "package.json", type: "blob" }]
+    });
+    createPresentationPlan.mockImplementation(async (_model, options) => {
+      options?.onFallback?.("Codex down");
+      return {
+        mode: "compact-story",
+        theme: "signal-dark",
+        locale: "en",
+        chapters: [],
+        detailPages: [],
+        plannedBy: "rules"
+      };
+    });
+
+    const result = await initRepoSite("acme/widgetkit", { ai: true, generationOptions: { locale: "en" } });
+
+    expect(createPresentationPlan).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({ useAi: true, onFallback: expect.any(Function) })
+    );
+    expect(result.presentationPlan.plannedBy).toBe("rules");
   });
 });

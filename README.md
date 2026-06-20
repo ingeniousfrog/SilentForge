@@ -354,7 +354,7 @@ reposite init openai/openai-node
 | Option | Description |
 |--------|-------------|
 | `-o, --output <dir>` | Output directory (default: `<repo-name>-site`) |
-| `--ai` | Use OpenAI to arrange evidence-backed structure (falls back to rules on failure) |
+| `--ai` | Enable AI-assisted structure (Codex first when logged in, OpenAI env fallback, then local rules) |
 | `--mode <mode>` | `auto`, `developer-deck`, `architecture-map`, `visual-showcase`, `compact-story` |
 | `--theme <theme>` | `auto`, `signal-dark`, `editorial-light`, `blueprint` |
 | `--chapters <kinds>` | Comma-separated chapter kinds (see [Presentation modes and themes](#presentation-modes-and-themes)) |
@@ -470,6 +470,8 @@ Switching Workbench locale does not retroactively translate past job events; it 
 | `OPENAI_BASE_URL` | Optional OpenAI-compatible endpoint (e.g. gpt2cursor bridge) |
 | `OPENAI_MODEL` | Override OpenAI/Codex model (default: `gpt-5.5`) |
 | `SILENTFORGE_AI_TIMEOUT_MS` | AI planning timeout in milliseconds (default: `60000` for Codex, `15000` for OpenAI API) |
+
+Copy [`.env.example`](.env.example) for a commented starter template. On Windows, local Codex via PTY requires `node-pty`; macOS/Linux can fall back to the `script` command when PTY is unavailable.
 
 Workbench-local preferences (browser `localStorage`, not environment variables): `silentforge.locale`, `silentforge.uiTheme`, `silentforge.githubToken` (when "Remember on this device" is enabled).
 

@@ -1,17 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
-import { minGithubTokenLength, normalizeGithubToken } from "../src/github/token.js";
-
-const optionalGithubTokenSchema = z.preprocess(
-  (value) => normalizeGithubToken(typeof value === "string" ? value : undefined),
-  z.string().min(minGithubTokenLength).max(200).optional()
-);
-
-const createJobSchema = z.object({
-  repoUrl: z.string().trim().min(1).max(500),
-  useAi: z.boolean().optional().default(false),
-  githubToken: optionalGithubTokenSchema
-});
+import { createJobSchema } from "../src/workbench/jobPayload.js";
 
 describe("workbench create job payload", () => {
   it("accepts jobs without a github token", () => {
@@ -40,5 +28,45 @@ describe("workbench create job payload", () => {
   it("drops github tokens that are too short", () => {
     const parsed = createJobSchema.parse({ repoUrl: "openai/openai-node", githubToken: "ghp_short" });
     expect(parsed.githubToken).toBeUndefined();
+  });
+
+  it("accepts optional aiConfig fields", () => {
+    const parsed = createJobSchema.parse({
+      repoUrl: "openai/openai-node",
+      useAi: true,
+      aiConfig: {
+        openaiApiKey: "sk-test-key",
+        openaiBaseUrl: "http://127.0.0.1:8787/v1",
+        openaiModel: "gpt-5.5",
+        codexModel: "gpt-5.5"
+      }
+    });
+
+    expect(parsed.aiConfig).toEqual({
+      openaiApiKey: "sk-test-key",
+      openaiBaseUrl: "http://127.0.0.1:8787/v1",
+      openaiModel: "gpt-5.5",
+      codexModel: "gpt-5.5"
+    });
+  });
+
+  it("drops short openai api keys from aiConfig", () => {
+    const parsed = createJobSchema.parse({
+      repoUrl: "openai/openai-node",
+      useAi: true,
+      aiConfig: { openaiApiKey: "short" }
+    });
+
+    expect(parsed.aiConfig?.openaiApiKey).toBeUndefined();
+  });
+
+  it("rejects invalid openai base urls", () => {
+    const parsed = createJobSchema.safeParse({
+      repoUrl: "openai/openai-node",
+      useAi: true,
+      aiConfig: { openaiBaseUrl: "not-a-url" }
+    });
+
+    expect(parsed.success).toBe(false);
   });
 });

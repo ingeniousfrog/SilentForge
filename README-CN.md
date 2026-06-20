@@ -354,7 +354,7 @@ reposite init openai/openai-node
 | 选项 | 说明 |
 |------|------|
 | `-o, --output <dir>` | 输出目录（默认：`<repo-name>-site`） |
-| `--ai` | 使用 OpenAI 编排有证据支撑的结构（失败时回退规则引擎） |
+| `--ai` | 启用 AI 辅助结构（本机 Codex 登录优先，OpenAI 环境变量备选，失败回退本地规则） |
 | `--mode <mode>` | `auto`、`developer-deck`、`architecture-map`、`visual-showcase`、`compact-story` |
 | `--theme <theme>` | `auto`、`signal-dark`、`editorial-light`、`blueprint` |
 | `--chapters <kinds>` | 逗号分隔的章节类型（见[演示模式与主题](#演示模式与主题)） |
@@ -470,6 +470,8 @@ Hero 章节始终保留。已启用但仓库无对应内容的章节会被省略
 | `OPENAI_BASE_URL` | 可选 OpenAI 兼容端点（如 gpt2cursor 桥接） |
 | `OPENAI_MODEL` | 覆盖 OpenAI/Codex 模型（默认：`gpt-5.5`） |
 | `SILENTFORGE_AI_TIMEOUT_MS` | AI 规划超时（毫秒；Codex 默认 `60000`，OpenAI API 默认 `15000`） |
+
+可复制 [`.env.example`](.env.example) 作为注释模板。Windows 上通过 PTY 调用本地 Codex 需要 `node-pty`；macOS/Linux 在 PTY 不可用时可降级到 `script` 命令。
 
 Workbench 本地偏好（浏览器 `localStorage`，非环境变量）：`silentforge.locale`、`silentforge.uiTheme`、`silentforge.githubToken`（勾选「在此设备上记住」时）。
 

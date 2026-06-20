@@ -97,7 +97,31 @@ describe("createPresentationPlan", () => {
     expect(onFallback).toHaveBeenCalledWith("timeout");
   });
 
-  it("accepts a successful AI planner result", async () => {
+  it("falls back when AI planner returns an invalid plan", async () => {
+    const onFallback = vi.fn();
+    const invalidPlan = {
+      ...buildPresentationPlan(sparseModel),
+      plannedBy: "codex" as const,
+      chapters: [
+        {
+          id: "hero",
+          kind: "hero" as const,
+          title: "Widget",
+          sourceRefs: ["unknown.source"],
+          verticalDetails: []
+        }
+      ]
+    };
+    const result = await createPresentationPlan(sparseModel, {
+      useAi: true,
+      aiPlanner: vi.fn().mockResolvedValue(invalidPlan),
+      onFallback
+    });
+    expect(result.plannedBy).toBe("rules");
+    expect(onFallback).toHaveBeenCalled();
+  });
+
+  it("validates a successful AI planner result", async () => {
     const result = await createPresentationPlan(sparseModel, {
       useAi: true,
       aiPlanner: vi.fn().mockResolvedValue(aiPlan)

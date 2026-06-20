@@ -215,7 +215,11 @@ const en: MessageTree = {
     serveHint: "Optional local preview: npx --yes serve \"{outputDir}\" (then open the printed URL).",
     workbenchUrl: "SilentForge workbench: {url}",
     stopHint: "Press Ctrl-C to stop.",
-    invalidLocale: "Unknown locale \"{locale}\". Allowed: en, zh"
+    invalidLocale: "Unknown locale \"{locale}\". Allowed: en, zh",
+    aiFallback: "AI structure unavailable: {message}",
+    aiPlannedCodex: "Presentation structure arranged by local Codex.",
+    aiPlannedOpenAi: "Presentation structure arranged by OpenAI.",
+    aiPlannedRules: "Presentation structure selected from local repository rules."
   },
   workbench: {
     pageTitle: "SilentForge Workbench",
@@ -234,7 +238,6 @@ const en: MessageTree = {
     settingsSaveNote: "Generate uses saved settings. Click Save settings or Generate to apply changes. GitHub and OpenAI credentials are sent only after you save non-empty values here.",
     settingsSummaryDefault: "Defaults",
     settingsSummaryToken: "GitHub token",
-    settingsSummaryAi: "AI",
     settingsSummaryOutput: "Custom output",
     githubTokenLabel: "Personal access token",
     githubTokenPlaceholder: "ghp_…",
@@ -610,7 +613,11 @@ const zh: MessageTree = {
     serveHint: "可选本地预览：npx --yes serve \"{outputDir}\"（然后打开终端打印的 URL）。",
     workbenchUrl: "SilentForge Workbench：{url}",
     stopHint: "按 Ctrl-C 停止。",
-    invalidLocale: "未知 locale \"{locale}\"。允许：en, zh"
+    invalidLocale: "未知 locale \"{locale}\"。允许：en, zh",
+    aiFallback: "AI 结构不可用：{message}",
+    aiPlannedCodex: "演示结构已由本机 Codex 编排。",
+    aiPlannedOpenAi: "演示结构已由 OpenAI 编排。",
+    aiPlannedRules: "演示结构已根据本地仓库规则选择。"
   },
   workbench: {
     pageTitle: "SilentForge Workbench",
@@ -629,7 +636,6 @@ const zh: MessageTree = {
     settingsSaveNote: "Generate 会使用已保存的设置。点击「保存设置」或「Generate」即可应用更改。仅当你在此保存非空的 GitHub / OpenAI 凭据后才会发送。",
     settingsSummaryDefault: "默认",
     settingsSummaryToken: "GitHub Token",
-    settingsSummaryAi: "AI",
     settingsSummaryOutput: "自定义输出",
     githubTokenLabel: "Personal Access Token",
     githubTokenPlaceholder: "ghp_…",
