@@ -749,6 +749,10 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
           resourceCards(state.resources.files.slice(0, 120));
       }
 
+      function formatDirectoryLabel(path) {
+        return path === "." ? t("repositoryRoot") : path;
+      }
+
       function renderWiki() {
         const wiki = state.resources.knowledgeBase;
         return '<div class="metrics">' +
@@ -769,7 +773,7 @@ export function workbenchClientScript(i18nJson: string, workflowTemplateJson: st
           ).join("") + '</div>' +
           '<h2>' + escapeHtml(t("topDirectories")) + '</h2>' +
           '<div class="resource-grid">' + wiki.directorySummaries.map((item) =>
-            '<div class="resource"><strong>' + escapeHtml(item.path) + '</strong><p>' + escapeHtml(item.summary) + '</p></div>'
+            '<div class="resource"><strong>' + escapeHtml(formatDirectoryLabel(item.path)) + '</strong><p>' + escapeHtml(item.summary) + '</p></div>'
           ).join("") + '</div>' +
           '<h2>' + escapeHtml(t("keyConfiguration")) + '</h2>' + configCards(wiki.configFiles) +
           '<h2>' + escapeHtml(t("moduleMap")) + '</h2><div class="resource-grid">' +

@@ -61,7 +61,8 @@ export function selectReadmeInsights(
         !insightExcludedHeadings.has(heading) &&
         heading !== "or" &&
         !isTableHeavy(section.content) &&
-        !isTableOfContents(section.content)
+        !isTableOfContents(section.content) &&
+        !hasNestedSubheadings(section.content)
       );
     })
     .slice(0, limit);
@@ -74,6 +75,7 @@ export function summarizeMarkdown(markdown: string, maximum = 180): string {
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
     .filter((line) => !isMarkdownTableLine(line))
+    .map((line) => line.replace(/^#{1,6}\s+/, "").trim())
     .map((line) => line.replace(/^[-*+]\s+/, "").trim())
     .join(" ");
   const plainText = stripInlineMarkdown(condensed);
@@ -106,20 +108,15 @@ export function extractMarkdownCommands(markdown: string | undefined): string | 
     return undefined;
   }
 
-  const blocks = extractMarkdownCodeBlocks(markdown);
-  if (blocks.length > 0) {
-    return preferredCommandBlocks(blocks)
-      .map((block) => block.code)
-      .join("\n\n");
+  const preferredSubsection = findPreferredCommandSubsection(markdown);
+  if (preferredSubsection) {
+    const subsectionCommands = extractCommandsFromSection(preferredSubsection);
+    if (subsectionCommands) {
+      return subsectionCommands;
+    }
   }
 
-  const fallback = markdown
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !line.startsWith("```") && !headingPattern.test(line))
-    .join("\n");
-
-  return fallback || undefined;
+  return extractCommandsFromSection(markdown);
 }
 
 export function extractCommandPreview(markdown: string | undefined, maxLines = 5): string | undefined {
@@ -158,6 +155,109 @@ export function isMermaidCodeBlock(block: MarkdownCodeBlock | undefined): boolea
 }
 
 const headingPattern = /^#{1,6}\s+/;
+const numberedListPattern = /^\d+\.\s/;
+const bulletPattern = /^[-*+]\s+/;
+const commandPrefixPattern =
+  /^(?:sudo\s+)?(?:git|cd|curl|wget|npm|npx|pnpm|yarn|bun|docker|podman|swift|go|cargo|make|xattr|chmod|brew|pip3?|python3?|node|rustc|cmake|\.\/)\b/i;
+const preferredSubsectionPatterns = [
+  /run from source/i,
+  /from source/i,
+  /build from source/i,
+  /quick start/i,
+  /getting started/i,
+  /install/i,
+  /download/i
+] as const;
+
+function extractCommandsFromSection(markdown: string): string | undefined {
+  const blocks = extractMarkdownCodeBlocks(markdown);
+  if (blocks.length > 0) {
+    return preferredCommandBlocks(blocks)
+      .map((block) => block.code)
+      .join("\n\n");
+  }
+
+  const bareCommands = extractBareCommandLines(markdown);
+  return bareCommands || undefined;
+}
+
+function findPreferredCommandSubsection(markdown: string): string | undefined {
+  const subsections = splitMarkdownSubsections(markdown);
+  if (subsections.length === 0) {
+    return undefined;
+  }
+
+  for (const pattern of preferredSubsectionPatterns) {
+    const match = subsections.find((subsection) => pattern.test(subsection.heading));
+    if (match) {
+      return match.content;
+    }
+  }
+
+  return undefined;
+}
+
+function splitMarkdownSubsections(markdown: string): readonly { readonly heading: string; readonly content: string }[] {
+  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+  const sections: { heading: string; content: string[] }[] = [];
+  let current: { heading: string; content: string[] } | undefined;
+
+  for (const line of lines) {
+    const match = line.match(/^###\s+(.+)$/);
+    if (match) {
+      if (current) {
+        sections.push(current);
+      }
+      current = { heading: match[1].replace(/#+$/, "").trim(), content: [] };
+      continue;
+    }
+
+    if (current) {
+      current.content.push(line);
+    }
+  }
+
+  if (current) {
+    sections.push(current);
+  }
+
+  return sections.map((section) => ({
+    heading: section.heading,
+    content: section.content.join("\n").trim()
+  }));
+}
+
+function extractBareCommandLines(markdown: string): string | undefined {
+  const lines = markdown
+    .replace(/```[\s\S]*?```/g, "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .filter((line) => !headingPattern.test(line))
+    .filter((line) => !numberedListPattern.test(line))
+    .filter((line) => !bulletPattern.test(line))
+    .filter((line) => !isMarkdownTableLine(line));
+
+  const commands: string[] = [];
+  for (const line of lines) {
+    if (line.startsWith("#") && !commandPrefixPattern.test(line.replace(/^#+\s*/, ""))) {
+      commands.push(line);
+      continue;
+    }
+    if (commandPrefixPattern.test(line)) {
+      commands.push(line);
+    }
+  }
+
+  return commands.length > 0 ? commands.join("\n") : undefined;
+}
+
+function hasNestedSubheadings(content: string): boolean {
+  return content
+    .replace(/```[\s\S]*?```/g, "")
+    .split("\n")
+    .some((line) => /^###\s+/.test(line.trim()));
+}
 
 function isMarkdownTableLine(line: string): boolean {
   const trimmed = line.trim();

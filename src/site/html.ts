@@ -141,7 +141,7 @@ function renderChapterContent(
       .slice(0, 5)
       .map(
         (directory) =>
-          `<article><strong>${escapeHtml(directory.path)}</strong><span>${escapeHtml(directory.summary)}</span></article>`
+          `<article><strong>${escapeHtml(directory.path === "." ? t(locale, "workbench.repositoryRoot") : directory.path)}</strong><span>${escapeHtml(directory.summary)}</span></article>`
       )
       .join("")}</div></div>`;
   }

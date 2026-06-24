@@ -1,10 +1,21 @@
 import { escapeHtml, safeExternalUrl } from "../site/security.js";
 
-export function stripInlineMarkdown(markdown: string): string {
+export function decodeHtmlEntities(markdown: string): string {
   return markdown
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
+}
+
+export function stripInlineMarkdown(markdown: string): string {
+  return decodeHtmlEntities(markdown)
     .replace(/```[\s\S]*?```/g, " ")
     .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/__([^_]+)__/g, "$1")
     .replace(/\*([^*]+)\*/g, "$1")
